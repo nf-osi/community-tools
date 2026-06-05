@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "idea",
+  "title": "IdeaSubmission",
+  "description": "A community roadmap idea — either an infrastructure/feature request or a proposal for new data.",
+  "type": "object",
+  "required": ["title", "summary", "submitter", "ideaType"],
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Short, descriptive title for the idea."
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "description": "Description and use case (Infrastructure) or scientific justification and precedents (New Data)."
+    },
+    "submitter": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Synapse user ID or username of the submitter. Populated server-side in dev; will be the authenticated user in production."
+    },
+    "ideaType": {
+      "type": "string",
+      "enum": ["Infrastructure", "New Data"],
+      "description": "Top-level category: an infrastructure/feature improvement or a proposal for new data in the portal."
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["Low", "Medium", "High"],
+      "description": "Submitter's rough priority estimate. Defaults to Medium if omitted."
+    },
+    "focusArea": {
+      "type": "string",
+      "enum": [
+        "Data Contribution",
+        "Data Discovery",
+        "Data Access & Governance",
+        "Analytical Capabilities",
+        "Community & Sustainability",
+        "Other"
+      ],
+      "description": "Which 5-year roadmap workstream this idea aligns with."
+    },
+    "affectedUserType": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "User type most impacted, e.g. Researcher, Patient, Clinician."
+    },
+    "grantTag": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Associated grant, funder, or initiative."
+    },
+    "suggestedFunding": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Suggested funding source for this idea."
+    },
+    "targetDate": {
+      "type": "string",
+      "pattern": "^Q[1-4] \\d{4}$",
+      "description": "Planned delivery quarter, e.g. Q3 2026. Set by the NF-OSI team."
+    },
+    "completedDate": {
+      "type": "string",
+      "pattern": "^Q[1-4] \\d{4}$",
+      "description": "Quarter in which the idea was completed, e.g. Q2 2026. Set when status transitions to Completed."
+    }
+  }
+}
