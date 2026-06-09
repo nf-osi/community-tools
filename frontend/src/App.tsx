@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, RefreshCw, Loader2, LayoutGrid, GanttChartSquare } from 'lucide-react';
-import { fetchIdeas, createIdea, voteForIdea } from './api';
-import type { Idea, IdeaFormData, Status, FocusArea } from './types';
+import { fetchIdeas, createIdea, voteForIdea, fetchSession, logout } from './api';
+import type { Idea, IdeaFormData, Status, FocusArea, User } from './types';
 import FacetFilters from './components/FacetFilters';
 import IdeaCard from './components/IdeaCard';
 import IdeaDetail from './components/IdeaDetail';
@@ -32,7 +32,8 @@ export default function App() {
   const [submittedIdea, setSubmittedIdea] = useState<Idea | null>(null);
   const [view, setView] = useState<'grid' | 'timeline'>('grid');
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const isLoggedIn = false; // Stub: always false until OAuth is implemented
+  const [user, setUser] = useState<User | null>(null);
+  const isLoggedIn = user !== null;
   const [votedIds, setVotedIds] = useState<Set<string>>(loadVotedIds);
 
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
@@ -56,7 +57,21 @@ export default function App() {
     }
   }
 
-  useEffect(() => { loadIdeas(); }, []);
+  useEffect(() => {
+    loadIdeas();
+    fetchSession().then(({ user }) => setUser(user));
+  }, []);
+
+  // Handle auth errors from OAuth callback redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get('auth_error');
+    if (authError) {
+      setUser(null);
+      setError(`Sign-in failed (${authError}). Please try again.`);
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
 
   // Reset to page 1 whenever filters or sort change
   useEffect(() => { setCurrentPage(1); }, [statusFilter, focusFilter, communityOnly, sortBy]);
@@ -94,6 +109,11 @@ export default function App() {
     } catch (err) {
       console.error('Vote failed:', err);
     }
+  }
+
+  async function handleLogout() {
+    await logout();
+    setUser(null);
   }
 
   async function handleCreateIdea(data: IdeaFormData) {
@@ -153,13 +173,34 @@ export default function App() {
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-brand-900 text-white text-sm font-semibold rounded hover:bg-brand-800 transition-colors shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Submit an Idea
-            </button>
+
+            {isLoggedIn ? (
+              <>
+                <span className="hidden sm:block text-xs text-brand-500 font-medium px-2">
+                  {user!.username}
+                </span>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-brand-900 text-white text-sm font-semibold rounded hover:bg-brand-800 transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Submit an Idea
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-2 text-sm text-brand-500 hover:text-brand-700 hover:bg-brand-50 rounded transition-colors"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <a
+                href={`${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`}
+                className="flex items-center gap-1.5 px-4 py-2 bg-brand-900 text-white text-sm font-semibold rounded hover:bg-brand-800 transition-colors shadow-sm"
+              >
+                Sign in
+              </a>
+            )}
           </div>
         </div>
       </header>

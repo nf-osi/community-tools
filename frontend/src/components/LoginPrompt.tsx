@@ -5,7 +5,7 @@ interface Props {
   onClose: () => void;
 }
 
-const SYNAPSE_LOGIN_URL = 'https://www.synapse.org/';
+const SYNAPSE_LOGIN_URL = `${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`;
 
 export default function LoginPrompt({ onClose }: Props) {
   useEffect(() => {
@@ -38,8 +38,6 @@ export default function LoginPrompt({ onClose }: Props) {
 
         <a
           href={SYNAPSE_LOGIN_URL}
-          target="_blank"
-          rel="noopener noreferrer"
           className="flex items-center justify-center w-full px-4 py-2.5 bg-brand-900 text-white text-sm font-semibold rounded hover:bg-brand-800 transition-colors shadow-sm"
         >
           Sign in with Synapse

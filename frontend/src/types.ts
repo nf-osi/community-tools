@@ -1,3 +1,8 @@
+export interface User {
+  id: string;
+  username: string;
+}
+
 export type IdeaType = 'Infrastructure' | 'New Data';
 
 export const IDEA_TYPE_BADGE: Record<IdeaType, string> = {
@@ -47,7 +52,7 @@ export interface Idea {
 export interface IdeaFormData {
   title: string;
   summary: string;
-  submitter: string;
+  submitter?: string;
   priority: Priority;
   ideaType: IdeaType;
   focusArea?: FocusArea;

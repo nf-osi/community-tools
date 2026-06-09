@@ -8,7 +8,6 @@ interface Props {
   onClose: () => void;
 }
 
-const DEFAULT_SUBMITTER = 'nf-osi-service';
 
 const IDEA_TYPE_CONFIG: Record<IdeaType, {
   icon: React.ReactNode;
@@ -33,7 +32,7 @@ const IDEA_TYPE_CONFIG: Record<IdeaType, {
 const EMPTY: IdeaFormData = {
   title: '',
   summary: '',
-  submitter: DEFAULT_SUBMITTER,
+  submitter: '',
   priority: 'Medium',
   ideaType: 'Infrastructure',
   focusArea: undefined,
@@ -64,7 +63,6 @@ export default function IdeaForm({ onSubmit, onClose }: Props) {
         ...form,
         title: form.title.trim(),
         summary: form.summary.trim(),
-        submitter: DEFAULT_SUBMITTER,
         affectedUserType: form.affectedUserType?.trim() || undefined,
         grantTag: form.grantTag?.trim() || undefined,
         suggestedFunding: form.suggestedFunding?.trim() || undefined,
