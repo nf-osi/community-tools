@@ -15,7 +15,11 @@ A public-facing roadmap app for the NF-OSI portal. The community can browse infr
 
 ## Authentication
 
-Viewing the roadmap requires no login. Submitting an idea currently uses the service account token (`SYNAPSE_AUTH_TOKEN`) as a placeholder. OAuth login for user-attributed submissions is planned for a future iteration.
+Viewing the roadmap requires no login.
+
+**User-facing (OAuth)**: Submitting an idea uses Synapse OAuth so submissions are attributed to the logged-in user. The frontend redirects to the Synapse OAuth authorization endpoint; on callback the backend exchanges the code for a user access token, which is used for that request only (not stored).
+
+**Backend writes (service token)**: All updates — vote counts, idea annotations — are written by the backend using the `SYNAPSE_AUTH_TOKEN` service account token, which stays server-side and is never exposed to the client.
 
 ## Setup
 
