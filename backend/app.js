@@ -84,11 +84,18 @@ app.get('/api/auth/login', (req, res) => {
   const nonce = crypto.randomBytes(16).toString('hex');
   req.session.oauthState = state;
   console.log('[auth/login] state:', state);
+  const claims = JSON.stringify({
+    userinfo: {
+      userid: null,
+      user_name: null,
+    },
+  });
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: OAUTH_CLIENT_ID,
     redirect_uri: REDIRECT_URI,
     scope: 'openid profile',
+    claims,
     state,
     nonce,
   });
@@ -343,7 +350,7 @@ app.post('/api/ideas/:id/vote', async (req, res) => {
   try {
     const headers = synapseHeaders();
     const { id } = req.params;
-    const userId = req.session.user.synapseId || req.session.user.id;
+    const userId = String(req.session.user.synapseId || req.session.user.id);
 
     const annoResp = await axios.get(
       `${SYNAPSE_BASE}/entity/${id}/annotations2`,
