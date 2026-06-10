@@ -76,7 +76,7 @@ export default function IdeaCard({ idea, voted, isLoggedIn, onVote, onSelect, on
           >
             {idea.title}
           </h3>
-          <p className="text-[13.5px] leading-[1.55] mt-2 line-clamp-4" style={{ color: '#54585f', maxWidth: '62ch' }}>
+          <p className="text-[13.5px] leading-[1.55] mt-2 line-clamp-3" style={{ color: '#54585f', maxWidth: '62ch' }}>
             {idea.summary}
           </p>
           <div className="flex items-center gap-3.5 mt-2 flex-wrap">
