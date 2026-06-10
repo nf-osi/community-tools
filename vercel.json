@@ -1,10 +1,17 @@
 {
-  "installCommand": "npm install && npm install --prefix backend && npm install --prefix frontend",
-  "buildCommand": "npm run build --prefix frontend",
-  "outputDirectory": "frontend/dist",
+  "experimentalServices": {
+    "frontend": {
+      "root": "frontend",
+      "routePrefix": "/",
+      "framework": "vite"
+    },
+    "backend": {
+      "root": "backend",
+      "routePrefix": "/_/backend"
+    }
+  },
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api" },
-    { "source": "/oauth/:path*", "destination": "/api" },
-    { "source": "/:path*", "destination": "/index.html" }
+    { "source": "/api/:path*", "destination": "/_/backend/api/:path*" },
+    { "source": "/oauth/:path*", "destination": "/_/backend/oauth/:path*" }
   ]
 }
