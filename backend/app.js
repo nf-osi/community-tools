@@ -190,7 +190,7 @@ app.get('/api/ideas', async (req, res) => {
           ...parsed,
           votes: Number(parsed.votes ?? 0),
           voters: parsed.voters ?? [],
-          communitySubmitted: parsed.communitySubmitted !== false,
+          communitySubmitted: parsed.communitySubmitted === true || parsed.communitySubmitted === 'true',
         };
       })
     );
