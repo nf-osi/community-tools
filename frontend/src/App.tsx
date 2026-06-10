@@ -133,10 +133,8 @@ export default function App() {
       <header className="bg-transparent sticky top-0 z-40 border-b border-brand-200/60 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div>
-            <div className="flex items-baseline gap-2.5">
-              <span className="text-[11px] font-semibold text-brand-500 uppercase tracking-[0.2em]">
-                NF-OSI
-              </span>
+            <div className="flex items-center gap-2.5">
+              <img src="/logo.svg" alt="NF-OSI" className="h-10 w-auto" />
               <span className="text-brand-300">·</span>
               <h1 className="font-display italic text-[2rem] leading-tight text-brand-900">
                 Community Roadmap

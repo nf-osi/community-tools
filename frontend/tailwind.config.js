@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
+        display: ['Source Serif 4', 'Georgia', 'serif'],
         body: ['IBM Plex Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
