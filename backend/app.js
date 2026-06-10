@@ -133,9 +133,9 @@ app.get('/oauth/callback', async (req, res) => {
       headers: { Authorization: `Bearer ${access_token}` },
     });
 
-    const { sub, preferred_username } = userResp.data;
-    console.log('[oauth/callback] userinfo:', { sub, preferred_username });
-    req.session.user = { id: sub, username: preferred_username || sub };
+    const { sub, user_name } = userResp.data;
+    console.log('[oauth/callback] userinfo:', { sub, user_name });
+    req.session.user = { id: sub, username: user_name || sub };
     console.log('[oauth/callback] session saved, redirecting to', POST_LOGIN_URL);
 
     res.redirect(POST_LOGIN_URL);

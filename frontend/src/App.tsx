@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Loader2 } from 'lucide-react';
+import { RefreshCw, Loader2, Lightbulb } from 'lucide-react';
 import { fetchIdeas, createIdea, voteForIdea, fetchSession, logout } from './api';
 import type { Idea, IdeaFormData, Status, FocusArea, User } from './types';
 import FacetFilters from './components/FacetFilters';
@@ -215,7 +215,7 @@ export default function App() {
                 onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}
                 onMouseLeave={e => (e.currentTarget.style.background = '#16181c')}
               >
-                + Submit idea
+                <Lightbulb className="w-4 h-4 inline-block mr-1.5" />Submit idea
               </button>
               <button
                 onClick={handleLogout}
@@ -233,7 +233,7 @@ export default function App() {
               onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}
               onMouseLeave={e => (e.currentTarget.style.background = '#16181c')}
             >
-              Contribute idea
+              Log in
             </a>
           )}
         </div>
