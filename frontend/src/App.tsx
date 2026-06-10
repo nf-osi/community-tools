@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, RefreshCw, Loader2, LayoutGrid, GanttChartSquare } from 'lucide-react';
+import { RefreshCw, Loader2, Lightbulb } from 'lucide-react';
 import { fetchIdeas, createIdea, voteForIdea, fetchSession, logout } from './api';
 import type { Idea, IdeaFormData, Status, FocusArea, User } from './types';
 import FacetFilters from './components/FacetFilters';
@@ -40,9 +40,11 @@ export default function App() {
   const [focusFilter, setFocusFilter] = useState<FocusArea | 'All'>('All');
   const [communityOnly, setCommunityOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'votes' | 'newest'>('votes');
+  const [dateFrom, setDateFrom] = useState<string | null>(null);
+  const [dateTo, setDateTo] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const PAGE_SIZE = 6;
+  const PAGE_SIZE = 7;
 
   async function loadIdeas() {
     setLoading(true);
@@ -74,13 +76,28 @@ export default function App() {
   }, []);
 
   // Reset to page 1 whenever filters or sort change
-  useEffect(() => { setCurrentPage(1); }, [statusFilter, focusFilter, communityOnly, sortBy]);
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, focusFilter, communityOnly, sortBy, dateFrom, dateTo]);
+
+  function quarterKey(q: string): number {
+    const [quarter, year] = q.split(' ');
+    return parseInt(year) * 10 + parseInt(quarter[1]);
+  }
 
   const filteredIdeas = useMemo(() => {
     let result = ideas;
     if (statusFilter !== 'All') result = result.filter((i) => i.status === statusFilter);
     if (focusFilter !== 'All') result = result.filter((i) => i.focusArea === focusFilter);
     if (communityOnly) result = result.filter((i) => i.communitySubmitted);
+    if (dateFrom || dateTo) {
+      result = result.filter((i) => {
+        const d = i.completedDate ?? i.targetDate;
+        if (!d) return false;
+        const key = quarterKey(d);
+        if (dateFrom && key < quarterKey(dateFrom)) return false;
+        if (dateTo && key > quarterKey(dateTo)) return false;
+        return true;
+      });
+    }
 
     return [...result].sort((a, b) => {
       if (sortBy === 'votes') return b.votes - a.votes;
@@ -130,89 +147,108 @@ export default function App() {
   return (
     <div className="min-h-screen">
       {/* Masthead */}
-      <header className="bg-transparent sticky top-0 z-40 border-b border-brand-200/60 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+      <header className="max-w-7xl mx-auto px-10 pt-8 flex items-end gap-5 border-b border-[#e2e2dc]">
+        <div className="flex items-start gap-5 flex-shrink-0 pb-px">
+          <svg viewBox="0 0 40 40" className="w-10 h-10 flex-shrink-0 mt-1" aria-hidden="true">
+            <circle cx="15" cy="17" r="9.5" fill="#0d6e62" opacity=".82"/>
+            <circle cx="25" cy="14" r="7"   fill="#2c6fb0" opacity=".82"/>
+            <circle cx="20" cy="26" r="7.5" fill="#6a4fb0" opacity=".82"/>
+            <circle cx="28" cy="25" r="4.5" fill="#c98a18" opacity=".9"/>
+          </svg>
           <div>
-            <div className="flex items-baseline gap-2.5">
-              <span className="text-[11px] font-semibold text-brand-500 uppercase tracking-[0.2em]">
-                NF-OSI
-              </span>
-              <span className="text-brand-300">·</span>
-              <h1 className="font-display italic text-[2rem] leading-tight text-brand-900">
-                Community Roadmap
-              </h1>
+            <div className="font-display font-medium text-[15px] uppercase tracking-[0.18em]" style={{ color: '#8a8f98' }}>
+              NF Data Portal
             </div>
-            <p className="text-sm text-brand-600 hidden sm:block mt-0.5">
-              Propose infrastructure improvements or new data for NF research — upvote priorities and join the discussion.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* View toggle */}
-            <div className="flex rounded border border-brand-200 overflow-hidden">
-              <button
-                onClick={() => setView('grid')}
-                title="Grid view"
-                className={`p-2 transition-colors ${view === 'grid' ? 'bg-brand-100 text-brand-800' : 'text-brand-400 hover:text-brand-700 hover:bg-brand-50'}`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setView('timeline')}
-                title="Timeline view"
-                className={`p-2 transition-colors ${view === 'timeline' ? 'bg-brand-100 text-brand-800' : 'text-brand-400 hover:text-brand-700 hover:bg-brand-50'}`}
-              >
-                <GanttChartSquare className="w-4 h-4" />
-              </button>
-            </div>
-            <button
-              onClick={loadIdeas}
-              disabled={loading}
-              title="Refresh"
-              className="p-2 rounded text-brand-400 hover:text-brand-700 hover:bg-brand-100 transition-colors disabled:opacity-30"
+            <h1
+              className="font-display font-semibold text-[46px] leading-[.98] tracking-[-0.025em] mt-1"
+              style={{ color: '#16181c' }}
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-
-            {isLoggedIn ? (
-              <>
-                <span className="hidden sm:block text-xs text-brand-500 font-medium px-2">
-                  {user!.username}
-                </span>
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-brand-900 text-white text-sm font-semibold rounded hover:bg-brand-800 transition-colors shadow-sm"
-                >
-                  <Plus className="w-4 h-4" />
-                  Submit an Idea
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-2 text-sm text-brand-500 hover:text-brand-700 hover:bg-brand-50 rounded transition-colors"
-                >
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <a
-                href={`${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`}
-                className="flex items-center gap-1.5 px-4 py-2 bg-brand-900 text-white text-sm font-semibold rounded hover:bg-brand-800 transition-colors shadow-sm"
-              >
-                Sign in
-              </a>
-            )}
+              Community<br />Roadmap
+            </h1>
           </div>
+        </div>
+
+        {/* Tabs — centered in the blank header space */}
+        <div className="flex-1 flex justify-center gap-[30px]">
+          <button
+            onClick={() => setView('grid')}
+            className="font-display font-medium text-[15px] py-3.5 border-b-2 -mb-px transition-colors"
+            style={{
+              color: view === 'grid' ? '#16181c' : '#8a8f98',
+              borderBottomColor: view === 'grid' ? '#1b7eab' : 'transparent',
+            }}
+          >
+            Roadmap ideas
+          </button>
+          <button
+            onClick={() => setView('timeline')}
+            className="font-display font-medium text-[15px] py-3.5 border-b-2 -mb-px transition-colors"
+            style={{
+              color: view === 'timeline' ? '#16181c' : '#8a8f98',
+              borderBottomColor: view === 'timeline' ? '#1b7eab' : 'transparent',
+            }}
+          >
+            Timeline
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 pb-3 flex-shrink-0">
+          <button
+            onClick={loadIdeas}
+            disabled={loading}
+            title="Refresh"
+            className="w-[42px] h-[42px] rounded-full flex items-center justify-center border transition-colors disabled:opacity-30"
+            style={{ borderColor: '#cfd0c9', color: '#54585f' }}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+
+          {isLoggedIn ? (
+            <>
+              <span className="hidden sm:block text-sm font-medium px-1" style={{ color: '#54585f' }}>
+                {user!.username}
+              </span>
+              <button
+                onClick={() => setShowForm(true)}
+                className="font-display font-medium text-sm px-[22px] py-[11px] rounded-full transition-colors"
+                style={{ background: '#16181c', color: '#f6f6f3' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#16181c')}
+              >
+                <Lightbulb className="w-4 h-4 inline-block mr-1.5" />Submit idea
+              </button>
+              <button
+                onClick={handleLogout}
+                className="text-sm px-3 py-2 rounded transition-colors"
+                style={{ color: '#54585f' }}
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <a
+              href={`${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`}
+              className="font-display font-medium text-sm px-[22px] py-[11px] rounded-full transition-colors"
+              style={{ background: '#16181c', color: '#f6f6f3' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#16181c')}
+            >
+              Log in
+            </a>
+          )}
         </div>
       </header>
 
       {/* Main layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-7xl mx-auto px-10 pt-8 pb-16">
         <div className="flex gap-12">
           <FacetFilters
             statusFilter={statusFilter}
             focusFilter={focusFilter}
             communityOnly={communityOnly}
             sortBy={sortBy}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
             totalCount={ideas.length}
             filteredCount={filteredIdeas.length}
             ideas={ideas}
@@ -220,6 +256,8 @@ export default function App() {
             onFocusChange={setFocusFilter}
             onCommunityToggle={setCommunityOnly}
             onSortChange={setSortBy}
+            onDateFromChange={setDateFrom}
+            onDateToChange={setDateTo}
           />
 
           <main className="flex-1 min-w-0">
@@ -237,22 +275,30 @@ export default function App() {
               </div>
             ) : filteredIdeas.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24">
-                <p className="font-display italic text-lg text-brand-300">
+                <p className="font-display text-lg" style={{ color: '#8a8f98' }}>
                   {ideas.length === 0 ? 'No ideas yet — be the first to submit one.' : 'No ideas match the current filters.'}
                 </p>
               </div>
             ) : view === 'timeline' ? (
-              <TimelineView
-                ideas={filteredIdeas}
-                votedIds={votedIds}
-                isLoggedIn={isLoggedIn}
-                onVote={handleVote}
-                onSelect={setSelectedIdea}
-                onRequestLogin={() => setShowLoginModal(true)}
-              />
+              <div className="pl-16 h-[80vh] overflow-y-auto pr-4 timeline-scroll">
+                <TimelineView
+                  ideas={filteredIdeas}
+                  votedIds={votedIds}
+                  isLoggedIn={isLoggedIn}
+                  onVote={handleVote}
+                  onSelect={setSelectedIdea}
+                  onRequestLogin={() => setShowLoginModal(true)}
+                />
+              </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div
+                  className="font-display text-[13px] uppercase tracking-[0.04em] mb-0.5"
+                  style={{ color: '#8a8f98' }}
+                >
+                  {filteredIdeas.length} idea{filteredIdeas.length !== 1 ? 's' : ''} · sorted by {sortBy === 'votes' ? 'votes' : 'newest'}
+                </div>
+                <div className="border-t-2" style={{ borderColor: '#16181c' }}>
                   {pagedIdeas.map((idea) => (
                     <IdeaCard
                       key={idea.id}
@@ -267,23 +313,23 @@ export default function App() {
                 </div>
 
                 {shouldPaginate && totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-1.5 mt-8">
+                  <div className="flex items-center justify-end gap-2 mt-8">
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="font-display font-medium text-sm px-3 h-10 rounded border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      style={{ borderColor: '#cfd0c9', color: '#54585f' }}
                     >
-                      ← Prev
+                      Prev
                     </button>
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 text-sm rounded-md transition-colors font-medium ${
-                          currentPage === page
-                            ? 'bg-brand-600 text-white'
-                            : 'text-gray-500 hover:bg-gray-100'
-                        }`}
+                        className="font-display font-medium text-sm w-10 h-10 rounded border transition-colors"
+                        style={currentPage === page
+                          ? { background: '#16181c', color: '#f6f6f3', borderColor: '#16181c' }
+                          : { borderColor: '#cfd0c9', color: '#54585f' }}
                       >
                         {page}
                       </button>
@@ -291,9 +337,10 @@ export default function App() {
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      className="font-display font-medium text-sm px-3 h-10 rounded border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      style={{ borderColor: '#cfd0c9', color: '#54585f' }}
                     >
-                      Next →
+                      Next
                     </button>
                   </div>
                 )}
