@@ -146,23 +146,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            {/* View toggle */}
-            <div className="flex rounded border border-brand-200 overflow-hidden">
-              <button
-                onClick={() => setView('grid')}
-                title="Grid view"
-                className={`p-2 transition-colors ${view === 'grid' ? 'bg-brand-100 text-brand-800' : 'text-brand-400 hover:text-brand-700 hover:bg-brand-50'}`}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setView('timeline')}
-                title="Timeline view"
-                className={`p-2 transition-colors ${view === 'timeline' ? 'bg-brand-100 text-brand-800' : 'text-brand-400 hover:text-brand-700 hover:bg-brand-50'}`}
-              >
-                <GanttChartSquare className="w-4 h-4" />
-              </button>
-            </div>
             <button
               onClick={loadIdeas}
               disabled={loading}
@@ -202,6 +185,34 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* View tabs */}
+      <div className="border-b border-brand-200/60 bg-white/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1">
+          <button
+            onClick={() => setView('grid')}
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors -mb-px ${
+              view === 'grid'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-brand-400 hover:text-brand-600 hover:border-brand-300'
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Roadmap Ideas
+          </button>
+          <button
+            onClick={() => setView('timeline')}
+            className={`flex items-center gap-2 px-5 py-3.5 text-sm font-semibold border-b-2 transition-colors -mb-px ${
+              view === 'timeline'
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-brand-400 hover:text-brand-600 hover:border-brand-300'
+            }`}
+          >
+            <GanttChartSquare className="w-4 h-4" />
+            Timeline
+          </button>
+        </div>
+      </div>
 
       {/* Main layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
