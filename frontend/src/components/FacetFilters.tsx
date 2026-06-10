@@ -7,6 +7,8 @@ interface Props {
   focusFilter: FocusArea | 'All';
   communityOnly: boolean;
   sortBy: 'votes' | 'newest';
+  dateFrom: string | null;
+  dateTo: string | null;
   totalCount: number;
   filteredCount: number;
   ideas: Idea[];
@@ -14,6 +16,8 @@ interface Props {
   onFocusChange: (v: FocusArea | 'All') => void;
   onCommunityToggle: (v: boolean) => void;
   onSortChange: (v: 'votes' | 'newest') => void;
+  onDateFromChange: (v: string | null) => void;
+  onDateToChange: (v: string | null) => void;
 }
 
 function RailLabel({ children }: { children: React.ReactNode }) {
@@ -66,10 +70,16 @@ function RailButton({
   );
 }
 
+function quarterKey(q: string): number {
+  const [quarter, year] = q.split(' ');
+  return parseInt(year) * 10 + parseInt(quarter[1]);
+}
+
 export default function FacetFilters({
-  statusFilter, focusFilter, communityOnly, sortBy,
+  statusFilter, focusFilter, communityOnly, sortBy, dateFrom, dateTo,
   totalCount, filteredCount, ideas,
   onStatusChange, onFocusChange, onCommunityToggle, onSortChange,
+  onDateFromChange, onDateToChange,
 }: Props) {
   const statusCounts = ALL_STATUSES.reduce<Record<string, number>>((acc, s) => {
     acc[s] = ideas.filter((i) => i.status === s).length;
@@ -82,6 +92,11 @@ export default function FacetFilters({
   }, {});
 
   const communityCount = ideas.filter((i) => i.communitySubmitted).length;
+
+  const quarters = Array.from(
+    new Set(ideas.flatMap((i) => [i.completedDate, i.targetDate].filter(Boolean) as string[]))
+  ).sort((a, b) => quarterKey(a) - quarterKey(b));
+
 
   return (
     <aside className="w-[200px] flex-shrink-0 sticky top-6 self-start">
@@ -134,6 +149,20 @@ export default function FacetFilters({
         ))}
       </div>
 
+      {/* Time range */}
+      {quarters.length > 1 && (
+        <div className="mb-7">
+          <RailLabel>Time range</RailLabel>
+          <TimeRangeSlider
+            quarters={quarters}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onFromChange={onDateFromChange}
+            onToChange={onDateToChange}
+          />
+        </div>
+      )}
+
       {/* Community */}
       <div className="pt-3.5 border-t border-[#e2e2dc]">
         <label className="flex items-center gap-2.5 cursor-pointer text-[14px]" style={{ color: '#54585f' }}>
@@ -152,5 +181,50 @@ export default function FacetFilters({
       </div>
 
     </aside>
+  );
+}
+
+function TimeRangeSlider({ quarters, dateFrom, dateTo, onFromChange, onToChange }: {
+  quarters: string[];
+  dateFrom: string | null;
+  dateTo: string | null;
+  onFromChange: (v: string | null) => void;
+  onToChange: (v: string | null) => void;
+}) {
+  const max = quarters.length - 1;
+  const fromIdx = dateFrom ? Math.max(0, quarters.indexOf(dateFrom)) : 0;
+  const toIdx = dateTo ? Math.min(max, quarters.indexOf(dateTo)) : max;
+
+  const fromPct = (fromIdx / max) * 100;
+  const toPct = (toIdx / max) * 100;
+
+  function handleFrom(e: React.ChangeEvent<HTMLInputElement>) {
+    const idx = Math.min(parseInt(e.target.value), toIdx);
+    onFromChange(idx === 0 ? null : quarters[idx]);
+  }
+
+  function handleTo(e: React.ChangeEvent<HTMLInputElement>) {
+    const idx = Math.max(parseInt(e.target.value), fromIdx);
+    onToChange(idx === max ? null : quarters[idx]);
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between font-display text-[12px] mb-3" style={{ color: '#54585f' }}>
+        <span>{quarters[fromIdx]}</span>
+        <span>{quarters[toIdx]}</span>
+      </div>
+      <div className="dual-range mx-1">
+        {/* Track background */}
+        <div className="absolute inset-0 rounded-full" style={{ background: '#e2e2dc' }} />
+        {/* Track fill */}
+        <div
+          className="absolute inset-y-0 rounded-full"
+          style={{ left: `${fromPct}%`, right: `${100 - toPct}%`, background: '#1b7eab' }}
+        />
+        <input type="range" min={0} max={max} value={fromIdx} onChange={handleFrom} />
+        <input type="range" min={0} max={max} value={toIdx} onChange={handleTo} />
+      </div>
+    </div>
   );
 }

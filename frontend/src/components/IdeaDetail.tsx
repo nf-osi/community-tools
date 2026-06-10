@@ -37,7 +37,7 @@ export default function IdeaDetail({ idea, voted, isLoggedIn, onVote, onClose, o
         {/* Idea-type accent strip */}
         <div className={`h-1 ${idea.ideaType === 'New Data' ? 'bg-emerald-400' : 'bg-brand-500'}`} />
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-gray-100">
+        <div className="flex items-start justify-between px-6 pt-6 pb-3 border-b border-gray-100">
           <div className="flex-1 pr-4">
             {/* Badges */}
             <div className="flex flex-wrap gap-2 mb-3">

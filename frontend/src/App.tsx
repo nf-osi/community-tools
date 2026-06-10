@@ -40,6 +40,8 @@ export default function App() {
   const [focusFilter, setFocusFilter] = useState<FocusArea | 'All'>('All');
   const [communityOnly, setCommunityOnly] = useState(false);
   const [sortBy, setSortBy] = useState<'votes' | 'newest'>('votes');
+  const [dateFrom, setDateFrom] = useState<string | null>(null);
+  const [dateTo, setDateTo] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const PAGE_SIZE = 6;
@@ -74,13 +76,28 @@ export default function App() {
   }, []);
 
   // Reset to page 1 whenever filters or sort change
-  useEffect(() => { setCurrentPage(1); }, [statusFilter, focusFilter, communityOnly, sortBy]);
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, focusFilter, communityOnly, sortBy, dateFrom, dateTo]);
+
+  function quarterKey(q: string): number {
+    const [quarter, year] = q.split(' ');
+    return parseInt(year) * 10 + parseInt(quarter[1]);
+  }
 
   const filteredIdeas = useMemo(() => {
     let result = ideas;
     if (statusFilter !== 'All') result = result.filter((i) => i.status === statusFilter);
     if (focusFilter !== 'All') result = result.filter((i) => i.focusArea === focusFilter);
     if (communityOnly) result = result.filter((i) => i.communitySubmitted);
+    if (dateFrom || dateTo) {
+      result = result.filter((i) => {
+        const d = i.completedDate ?? i.targetDate;
+        if (!d) return false;
+        const key = quarterKey(d);
+        if (dateFrom && key < quarterKey(dateFrom)) return false;
+        if (dateTo && key > quarterKey(dateTo)) return false;
+        return true;
+      });
+    }
 
     return [...result].sort((a, b) => {
       if (sortBy === 'votes') return b.votes - a.votes;
@@ -130,17 +147,52 @@ export default function App() {
   return (
     <div className="min-h-screen">
       {/* Masthead */}
-      <header className="max-w-7xl mx-auto px-10 pt-8 pb-0 flex items-start gap-5">
-        <div className="flex-1">
-          <img src="/logo.svg" alt="NF-OSI" className="h-8 w-auto mb-3" />
-          <h1
-            className="font-display font-semibold text-[46px] leading-[.98] tracking-[-0.025em]"
-            style={{ color: '#16181c' }}
-          >
-            Community<br />Roadmap
-          </h1>
+      <header className="max-w-7xl mx-auto px-10 pt-8 flex items-end gap-5 border-b border-[#e2e2dc]">
+        <div className="flex items-start gap-5 flex-shrink-0 pb-px">
+          <svg viewBox="0 0 40 40" className="w-10 h-10 flex-shrink-0 mt-1" aria-hidden="true">
+            <circle cx="15" cy="17" r="9.5" fill="#0d6e62" opacity=".82"/>
+            <circle cx="25" cy="14" r="7"   fill="#2c6fb0" opacity=".82"/>
+            <circle cx="20" cy="26" r="7.5" fill="#6a4fb0" opacity=".82"/>
+            <circle cx="28" cy="25" r="4.5" fill="#c98a18" opacity=".9"/>
+          </svg>
+          <div>
+            <div className="font-display font-medium text-[15px] uppercase tracking-[0.18em]" style={{ color: '#8a8f98' }}>
+              NF Data Portal
+            </div>
+            <h1
+              className="font-display font-semibold text-[46px] leading-[.98] tracking-[-0.025em] mt-1"
+              style={{ color: '#16181c' }}
+            >
+              Community<br />Roadmap
+            </h1>
+          </div>
         </div>
-        <div className="flex items-center gap-3 pt-2 flex-shrink-0">
+
+        {/* Tabs — centered in the blank header space */}
+        <div className="flex-1 flex justify-center gap-[30px]">
+          <button
+            onClick={() => setView('grid')}
+            className="font-display font-medium text-[15px] py-3.5 border-b-2 -mb-px transition-colors"
+            style={{
+              color: view === 'grid' ? '#16181c' : '#8a8f98',
+              borderBottomColor: view === 'grid' ? '#1b7eab' : 'transparent',
+            }}
+          >
+            Roadmap ideas
+          </button>
+          <button
+            onClick={() => setView('timeline')}
+            className="font-display font-medium text-[15px] py-3.5 border-b-2 -mb-px transition-colors"
+            style={{
+              color: view === 'timeline' ? '#16181c' : '#8a8f98',
+              borderBottomColor: view === 'timeline' ? '#1b7eab' : 'transparent',
+            }}
+          >
+            Timeline
+          </button>
+        </div>
+
+        <div className="flex items-center gap-3 pb-3 flex-shrink-0">
           <button
             onClick={loadIdeas}
             disabled={loading}
@@ -160,7 +212,7 @@ export default function App() {
                 onClick={() => setShowForm(true)}
                 className="font-display font-medium text-sm px-[22px] py-[11px] rounded-full transition-colors"
                 style={{ background: '#16181c', color: '#f6f6f3' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#1f3df0')}
+                onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}
                 onMouseLeave={e => (e.currentTarget.style.background = '#16181c')}
               >
                 + Submit idea
@@ -178,7 +230,7 @@ export default function App() {
               href={`${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`}
               className="font-display font-medium text-sm px-[22px] py-[11px] rounded-full transition-colors"
               style={{ background: '#16181c', color: '#f6f6f3' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#1f3df0')}
+              onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}
               onMouseLeave={e => (e.currentTarget.style.background = '#16181c')}
             >
               Sign in
@@ -187,40 +239,16 @@ export default function App() {
         </div>
       </header>
 
-      {/* View tabs */}
-      <div className="border-b border-[#e2e2dc] mt-7">
-        <div className="max-w-7xl mx-auto px-10 flex gap-[30px]">
-          <button
-            onClick={() => setView('grid')}
-            className="font-display font-medium text-[15px] py-3.5 border-b-2 -mb-px transition-colors"
-            style={{
-              color: view === 'grid' ? '#16181c' : '#8a8f98',
-              borderBottomColor: view === 'grid' ? '#1f3df0' : 'transparent',
-            }}
-          >
-            Roadmap ideas
-          </button>
-          <button
-            onClick={() => setView('timeline')}
-            className="font-display font-medium text-[15px] py-3.5 border-b-2 -mb-px transition-colors"
-            style={{
-              color: view === 'timeline' ? '#16181c' : '#8a8f98',
-              borderBottomColor: view === 'timeline' ? '#1f3df0' : 'transparent',
-            }}
-          >
-            Timeline
-          </button>
-        </div>
-      </div>
-
       {/* Main layout */}
-      <div className="max-w-7xl mx-auto px-10 py-8">
+      <div className="max-w-7xl mx-auto px-10 pt-8 pb-16">
         <div className="flex gap-12">
           <FacetFilters
             statusFilter={statusFilter}
             focusFilter={focusFilter}
             communityOnly={communityOnly}
             sortBy={sortBy}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
             totalCount={ideas.length}
             filteredCount={filteredIdeas.length}
             ideas={ideas}
@@ -228,6 +256,8 @@ export default function App() {
             onFocusChange={setFocusFilter}
             onCommunityToggle={setCommunityOnly}
             onSortChange={setSortBy}
+            onDateFromChange={setDateFrom}
+            onDateToChange={setDateTo}
           />
 
           <main className="flex-1 min-w-0">
@@ -250,14 +280,16 @@ export default function App() {
                 </p>
               </div>
             ) : view === 'timeline' ? (
-              <TimelineView
-                ideas={filteredIdeas}
-                votedIds={votedIds}
-                isLoggedIn={isLoggedIn}
-                onVote={handleVote}
-                onSelect={setSelectedIdea}
-                onRequestLogin={() => setShowLoginModal(true)}
-              />
+              <div className="pl-16 h-[80vh] overflow-y-auto pr-4 timeline-scroll">
+                <TimelineView
+                  ideas={filteredIdeas}
+                  votedIds={votedIds}
+                  isLoggedIn={isLoggedIn}
+                  onVote={handleVote}
+                  onSelect={setSelectedIdea}
+                  onRequestLogin={() => setShowLoginModal(true)}
+                />
+              </div>
             ) : (
               <>
                 <div
