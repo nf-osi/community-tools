@@ -235,9 +235,10 @@ app.post('/api/ideas', async (req, res) => {
     } = req.body;
 
     const submitter = req.session.user.username;
+    const submitterId = req.session.user.id;
 
-    // Inject submitter (from session) before schema validation
-    const bodyWithSubmitter = { ...req.body, submitter };
+    // Inject submitter fields (from session) before schema validation
+    const bodyWithSubmitter = { ...req.body, submitter, submitterId };
     if (!validateIdea(bodyWithSubmitter)) {
       const errors = validateIdea.errors.map((e) => {
         const field = e.instancePath.replace(/^\//, '') || e.params?.missingProperty || 'request';
@@ -265,6 +266,7 @@ app.post('/api/ideas', async (req, res) => {
       title,
       summary,
       submitter,
+      submitterId,
       priority: priority || 'Medium',
       status: 'Proposed',
       votes: 0,

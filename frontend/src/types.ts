@@ -34,6 +34,7 @@ export interface Idea {
   title: string;
   summary: string;
   submitter: string;
+  submitterId?: string;
   priority: Priority;
   status: Status;
   votes: number;
