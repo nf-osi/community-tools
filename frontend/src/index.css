@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     background-color: #eaf5fa;
     min-height: 100vh;
   }

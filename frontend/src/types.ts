@@ -96,3 +96,20 @@ export const FOCUS_AREAS: FocusArea[] = [
 ];
 
 export const PRIORITIES: Priority[] = ['Low', 'Medium', 'High'];
+
+export const STATUS_META: Record<Status, { color: string; bg: string }> = {
+  'Proposed':             { color: '#54585f', bg: '#ececea' },
+  'Under Consideration':  { color: '#54585f', bg: '#ececea' },
+  'In Progress':          { color: '#1f3df0', bg: '#e7eaff' },
+  'Completed':            { color: '#1d7a4f', bg: '#e1f1e8' },
+  "Won't Pursue":         { color: '#8a8f98', bg: '#eeeeeb' },
+};
+
+export const FOCUS_AREA_COLOR: Record<FocusArea, string> = {
+  'Data Contribution':          '#1f3df0',
+  'Data Discovery':             '#1d7a4f',
+  'Data Access & Governance':   '#c4720c',
+  'Analytical Capabilities':    '#7b3df0',
+  'Community & Sustainability': '#c0397e',
+  'Other':                      '#8a8f98',
+};

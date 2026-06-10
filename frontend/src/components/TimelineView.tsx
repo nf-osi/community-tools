@@ -1,7 +1,7 @@
-import React from 'react';
-import { ChevronUp, CalendarCheck, CalendarClock, Wrench, Dna, Star } from 'lucide-react';
+import { useState } from 'react';
+import { Star } from 'lucide-react';
 import type { Idea } from '../types';
-import { STATUS_COLORS, IDEA_TYPE_BADGE } from '../types';
+import { STATUS_META, FOCUS_AREA_COLOR } from '../types';
 
 interface Props {
   ideas: Idea[];
@@ -37,50 +37,73 @@ export default function TimelineView({ ideas, votedIds, isLoggedIn, onVote, onSe
   );
 
   const now = new Date();
-  const currentQuarterKey = (now.getFullYear() * 10) + Math.ceil((now.getMonth() + 1) / 3);
+  const currentQuarterKey = now.getFullYear() * 10 + Math.ceil((now.getMonth() + 1) / 3);
 
   function isPast(q: string) {
     return quarterToSortKey(q) < currentQuarterKey;
   }
 
+  const allGroups: Array<{ key: string; label: string; past: boolean; ideas: Idea[] }> = [
+    ...sortedQuarters.map((q) => ({
+      key: q,
+      label: q,
+      past: isPast(q),
+      ideas: groups.get(q)!,
+    })),
+    ...(undated.length > 0
+      ? [{ key: '__undated__', label: 'Unscheduled', past: false, ideas: undated }]
+      : []),
+  ];
+
   return (
     <div className="max-w-2xl">
-      {sortedQuarters.map((quarter, idx) => {
-        const done = isPast(quarter);
-        const isLast = idx === sortedQuarters.length - 1 && undated.length === 0;
+      {allGroups.map((group, idx) => {
+        const isLast = idx === allGroups.length - 1;
+        const isUnscheduled = group.key === '__undated__';
         return (
-          <div key={quarter} className="flex gap-5">
+          <div key={group.key} className="flex gap-6">
             {/* Spine */}
-            <div className="flex flex-col items-center w-10 flex-shrink-0">
-              <div className={`w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center shadow-sm mt-0.5 ${
-                done
-                  ? 'bg-green-500 shadow-green-200'
-                  : 'bg-white border-2 border-brand-400'
-              }`}>
-                {done && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-              </div>
+            <div className="flex flex-col items-center w-6 flex-shrink-0 pt-[3px]">
+              {isUnscheduled ? (
+                <div
+                  className="w-3 h-3 rounded-full border-2 border-dashed flex-shrink-0"
+                  style={{ borderColor: '#cfd0c9', background: 'transparent' }}
+                />
+              ) : group.past ? (
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ background: '#16181c' }}
+                />
+              ) : (
+                <div
+                  className="w-3 h-3 rounded-full border-2 flex-shrink-0"
+                  style={{ borderColor: '#16181c', background: 'transparent' }}
+                />
+              )}
               {!isLast && (
-                <div className={`w-px flex-1 mt-1 ${done ? 'bg-green-200' : 'bg-brand-100'}`} />
+                <div className="w-px flex-1 mt-1.5" style={{ background: '#e2e2dc' }} />
               )}
             </div>
 
             {/* Quarter group */}
             <div className="pb-10 flex-1 min-w-0">
-              <div className="flex items-baseline gap-2.5 mb-3">
-                <h3 className={`font-display italic text-xl leading-none ${done ? 'text-green-700' : 'text-brand-700'}`}>
-                  {quarter}
-                </h3>
-                <div className="flex items-center gap-1.5">
-                  {done
-                    ? <><CalendarCheck className="w-3.5 h-3.5 text-green-400" /><span className="text-xs text-green-500 font-medium">completed</span></>
-                    : <><CalendarClock className="w-3.5 h-3.5 text-brand-300" /><span className="text-xs text-brand-400 font-medium">target</span></>
-                  }
-                </div>
+              <div className="flex items-center gap-3 mb-4">
+                <span
+                  className="font-display font-medium text-[15px] uppercase tracking-[0.1em]"
+                  style={{ color: group.past || isUnscheduled ? '#8a8f98' : '#16181c' }}
+                >
+                  {group.label}
+                </span>
+                {group.past && !isUnscheduled && (
+                  <span className="font-display text-[11px] uppercase tracking-[0.14em]" style={{ color: '#8a8f98' }}>
+                    completed
+                  </span>
+                )}
               </div>
 
-              <div className="space-y-2">
-                {groups.get(quarter)!.map((idea) => (
-                  <TimelineCard
+              <div className="border-t" style={{ borderColor: '#e2e2dc' }}>
+                {group.ideas.map((idea) => (
+                  <TimelineRow
                     key={idea.id}
                     idea={idea}
                     voted={votedIds.has(idea.id)}
@@ -88,6 +111,7 @@ export default function TimelineView({ ideas, votedIds, isLoggedIn, onVote, onSe
                     onVote={onVote}
                     onSelect={onSelect}
                     onRequestLogin={onRequestLogin}
+                    muted={group.past}
                   />
                 ))}
               </div>
@@ -95,99 +119,104 @@ export default function TimelineView({ ideas, votedIds, isLoggedIn, onVote, onSe
           </div>
         );
       })}
-
-      {/* Undated */}
-      {undated.length > 0 && (
-        <div className="flex gap-5">
-          <div className="flex flex-col items-center w-10 flex-shrink-0">
-            <div className="w-5 h-5 rounded-full border-2 border-dashed border-gray-300 bg-white flex-shrink-0 mt-0.5" />
-          </div>
-          <div className="pb-8 flex-1 min-w-0">
-            <h3 className="font-display italic text-xl text-gray-300 mb-3">Unscheduled</h3>
-            <div className="space-y-2">
-              {undated.map((idea) => (
-                <TimelineCard
-                  key={idea.id}
-                  idea={idea}
-                  voted={votedIds.has(idea.id)}
-                  isLoggedIn={isLoggedIn}
-                  onVote={onVote}
-                  onSelect={onSelect}
-                  onRequestLogin={onRequestLogin}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-function TimelineCard({ idea, voted, isLoggedIn, onVote, onSelect, onRequestLogin }: {
+function TimelineRow({ idea, voted, isLoggedIn, onVote, onSelect, onRequestLogin, muted }: {
   idea: Idea;
   voted: boolean;
   isLoggedIn: boolean;
   onVote: (id: string) => void;
   onSelect: (idea: Idea) => void;
   onRequestLogin: () => void;
+  muted: boolean;
 }) {
+  const [hovered, setHovered] = useState(false);
+  const [voteHovered, setVoteHovered] = useState(false);
+
   function handleVote(e: React.MouseEvent) {
     e.stopPropagation();
     if (!isLoggedIn) { onRequestLogin(); return; }
     if (!voted) onVote(idea.id);
   }
 
+  const focusColor = idea.focusArea ? FOCUS_AREA_COLOR[idea.focusArea] : '#8a8f98';
+  const statusMeta = STATUS_META[idea.status];
+
   return (
     <div
+      className="relative border-b cursor-pointer overflow-hidden"
+      style={{
+        borderColor: '#e2e2dc',
+        padding: `16px ${hovered ? '8px' : '8px'} 16px ${hovered ? '12px' : '0'}`,
+        transition: 'padding 0.18s',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onClick={() => onSelect(idea)}
-      className="flex items-center gap-3 bg-white border border-gray-200 overflow-hidden hover:border-brand-200 hover:shadow-sm transition-all cursor-pointer group"
     >
-      {/* Type accent */}
-      <div className={`w-1 self-stretch flex-shrink-0 ${
-        idea.ideaType === 'New Data' ? 'bg-emerald-400' :
-        idea.ideaType === 'Infrastructure' ? 'bg-brand-400' : 'bg-gray-200'
-      }`} />
+      {/* Accent bar */}
+      <div
+        className="absolute left-0 top-0 bottom-0 transition-all duration-200"
+        style={{ width: hovered ? '3px' : '0', background: focusColor }}
+      />
 
-      {/* Vote */}
-      <button
-        onClick={handleVote}
-        disabled={voted}
-        className={`flex items-center gap-1 rounded-md px-2 py-2 flex-shrink-0 transition-colors ${
-          voted ? 'cursor-default' : 'hover:bg-brand-50'
-        }`}
-      >
-        <ChevronUp className={`w-3.5 h-3.5 ${voted ? 'text-brand-400' : 'text-gray-300'}`} />
-        <span className={`font-display font-bold text-base leading-none ${voted ? 'text-brand-600' : 'text-gray-500'}`}>
-          {idea.votes}
-        </span>
-      </button>
+      <div className="grid items-start gap-4" style={{ gridTemplateColumns: '56px 1fr auto' }}>
 
-      {/* Badges */}
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        {idea.ideaType && (
-          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${IDEA_TYPE_BADGE[idea.ideaType]}`}>
-            {idea.ideaType === 'Infrastructure' ? <Wrench className="w-3 h-3" /> : <Dna className="w-3 h-3" />}
-          </span>
-        )}
-        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[idea.status] ?? 'bg-gray-100 text-gray-600'}`}>
+        {/* Vote */}
+        <button
+          onClick={handleVote}
+          disabled={voted}
+          title={voted ? 'Already voted' : 'Upvote'}
+          className="text-right focus:outline-none"
+          onMouseEnter={() => setVoteHovered(true)}
+          onMouseLeave={() => setVoteHovered(false)}
+        >
+          <div className="flex justify-end mb-1" style={{ opacity: voteHovered ? 1 : 0, transition: 'opacity 0.15s' }}>
+            <div style={{ width: 0, height: 0, borderLeft: '4px solid transparent', borderRight: '4px solid transparent', borderBottom: `6px solid ${voted ? '#cfd0c9' : '#1f3df0'}` }} />
+          </div>
+          <div
+            className="font-display font-semibold text-[28px] leading-none tracking-[-0.03em]"
+            style={{ color: idea.votes === 0 ? '#d4d4cf' : muted ? '#8a8f98' : '#16181c' }}
+          >
+            {idea.votes}
+          </div>
+          <div className="text-[10px] font-medium uppercase tracking-[0.14em] mt-0.5 font-display" style={{ color: '#8a8f98' }}>
+            votes
+          </div>
+        </button>
+
+        {/* Title + chips */}
+        <div>
+          <h3
+            className="font-display font-medium text-[16px] leading-snug tracking-[-0.01em]"
+            style={{ color: muted ? '#54585f' : '#16181c' }}
+          >
+            {idea.title}
+          </h3>
+          <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+            {idea.focusArea && (
+              <span className="flex items-center gap-1.5 text-[12px] font-medium font-display" style={{ color: focusColor }}>
+                <span className="w-1.5 h-1.5 rounded-sm flex-shrink-0" style={{ background: focusColor }} />
+                {idea.focusArea}
+              </span>
+            )}
+            {idea.communitySubmitted && (
+              <Star className="w-3 h-3 flex-shrink-0" style={{ fill: '#d8b021', color: '#d8b021' }} />
+            )}
+          </div>
+        </div>
+
+        {/* Status */}
+        <span
+          className="inline-flex items-center gap-1.5 font-display font-medium text-[12px] px-2.5 py-1 rounded-full flex-shrink-0"
+          style={{ background: statusMeta.bg, color: statusMeta.color }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: statusMeta.color }} />
           {idea.status}
         </span>
-      </div>
 
-      {/* Title */}
-      <span className="text-sm text-gray-800 font-medium flex-1 min-w-0 truncate group-hover:text-brand-700 transition-colors py-2.5 pr-3">
-        {idea.title}
-      </span>
-
-      {/* Focus + community */}
-      <div className="flex items-center gap-2 flex-shrink-0 pr-3">
-        {idea.focusArea && (
-          <span className="text-xs text-gray-400 hidden sm:block">{idea.focusArea}</span>
-        )}
-        {idea.communitySubmitted && (
-          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-        )}
       </div>
     </div>
   );
