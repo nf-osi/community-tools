@@ -77,7 +77,7 @@ function quarterKey(q: string): number {
 
 export default function FacetFilters({
   statusFilter, focusFilter, communityOnly, sortBy, dateFrom, dateTo,
-  totalCount, filteredCount, ideas,
+  totalCount, ideas,
   onStatusChange, onFocusChange, onCommunityToggle, onSortChange,
   onDateFromChange, onDateToChange,
 }: Props) {
@@ -99,7 +99,7 @@ export default function FacetFilters({
 
 
   return (
-    <aside className="w-[200px] flex-shrink-0 sticky top-6 self-start">
+    <aside className="w-[200px] flex-shrink-0 sticky top-6 self-start mt-12">
 
       {/* Sort */}
       <div className="mb-7">

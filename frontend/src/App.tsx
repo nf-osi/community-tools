@@ -233,7 +233,7 @@ export default function App() {
               onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}
               onMouseLeave={e => (e.currentTarget.style.background = '#16181c')}
             >
-              Sign in
+              Contribute idea
             </a>
           )}
         </div>
