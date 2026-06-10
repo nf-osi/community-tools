@@ -133,9 +133,9 @@ app.get('/oauth/callback', async (req, res) => {
       headers: { Authorization: `Bearer ${access_token}` },
     });
 
-    const { sub, user_name } = userResp.data;
-    console.log('[oauth/callback] userinfo:', { sub, user_name });
-    req.session.user = { id: sub, username: user_name || sub };
+    const { sub, user_name, userid } = userResp.data;
+    console.log('[oauth/callback] userinfo:', { sub, user_name, userid });
+    req.session.user = { id: sub, synapseId: userid, username: user_name || sub };
     console.log('[oauth/callback] session saved, redirecting to', POST_LOGIN_URL);
 
     res.redirect(POST_LOGIN_URL);
@@ -235,7 +235,7 @@ app.post('/api/ideas', async (req, res) => {
     } = req.body;
 
     const submitter = req.session.user.username;
-    const submitterId = req.session.user.id;
+    const submitterId = req.session.user.synapseId;
 
     // Inject submitter fields (from session) before schema validation
     const bodyWithSubmitter = { ...req.body, submitter, submitterId };
@@ -343,7 +343,7 @@ app.post('/api/ideas/:id/vote', async (req, res) => {
   try {
     const headers = synapseHeaders();
     const { id } = req.params;
-    const userId = req.session.user.id;
+    const userId = req.session.user.synapseId || req.session.user.id;
 
     const annoResp = await axios.get(
       `${SYNAPSE_BASE}/entity/${id}/annotations2`,

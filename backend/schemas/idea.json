@@ -26,10 +26,8 @@
       "description": "Synapse username of the submitter. Populated server-side from the authenticated session."
     },
     "submitterId": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 100,
-      "description": "Synapse user sub (opaque ID) of the submitter. Populated server-side from the authenticated session."
+      "type": "integer",
+      "description": "Numeric Synapse user ID of the submitter. Populated server-side from the authenticated session."
     },
     "ideaType": {
       "type": "string",
