@@ -11,11 +11,19 @@ const validateIdea = ajv.compile(require('./schemas/idea.json'));
 
 const OAUTH_CLIENT_ID = process.env.SYNAPSE_OAUTH_CLIENT_ID;
 const OAUTH_CLIENT_SECRET = process.env.SYNAPSE_OAUTH_CLIENT_SECRET;
-const REDIRECT_URI = process.env.OAUTH_REDIRECT_URI || 'http://127.0.0.1:9000/oauth/callback';
+const REDIRECT_URI_ENV = process.env.OAUTH_REDIRECT_URI;
 const POST_LOGIN_URL = process.env.POST_LOGIN_URL || '/';
+
+function getRedirectUri(req) {
+  if (REDIRECT_URI_ENV) return REDIRECT_URI_ENV;
+  const proto = req.headers['x-forwarded-proto'] || req.protocol;
+  const host = req.headers['x-forwarded-host'] || req.get('host');
+  return `${proto}://${host}/oauth/callback`;
+}
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieSession({
@@ -90,10 +98,11 @@ app.get('/api/auth/login', (req, res) => {
       user_name: null,
     },
   });
+  const redirectUri = getRedirectUri(req);
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: OAUTH_CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
     scope: 'openid profile',
     claims,
     state,
@@ -120,12 +129,13 @@ app.get('/oauth/callback', async (req, res) => {
 
   try {
     console.log('[oauth/callback] exchanging code for token...');
+    const redirectUri = getRedirectUri(req);
     const tokenResp = await axios.post(
       `${SYNAPSE_AUTH_BASE}/oauth2/token`,
       new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: REDIRECT_URI,
+        redirect_uri: redirectUri,
       }).toString(),
       {
         auth: { username: OAUTH_CLIENT_ID, password: OAUTH_CLIENT_SECRET },
