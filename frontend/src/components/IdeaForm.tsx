@@ -78,6 +78,9 @@ export default function IdeaForm({ onSubmit, onClose }: Props) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="idea-form-title"
       className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-12 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -85,16 +88,17 @@ export default function IdeaForm({ onSubmit, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Submit an Idea</h2>
+            <h2 id="idea-form-title" className="text-lg font-bold text-gray-900">Submit an Idea</h2>
             <p className="text-sm text-gray-500 mt-0.5">
               Propose an infrastructure improvement or new data for the NF portal.
             </p>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="text-gray-400 hover:text-gray-600 rounded p-1.5 hover:bg-gray-100 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X aria-hidden="true" className="w-5 h-5" />
           </button>
         </div>
 
@@ -112,6 +116,7 @@ export default function IdeaForm({ onSubmit, onClose }: Props) {
                   <button
                     key={type}
                     type="button"
+                    aria-pressed={active}
                     onClick={() => set('ideaType', type)}
                     className={`flex items-center gap-2 px-4 py-3 rounded border text-sm font-medium transition-all ${
                       active
@@ -121,7 +126,7 @@ export default function IdeaForm({ onSubmit, onClose }: Props) {
                         : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    {cfg.icon}
+                    <span aria-hidden="true">{cfg.icon}</span>
                     {cfg.label}
                   </button>
                 );
@@ -130,7 +135,7 @@ export default function IdeaForm({ onSubmit, onClose }: Props) {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-4 py-3">
+            <div role="alert" aria-live="assertive" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded px-4 py-3">
               {error}
             </div>
           )}
@@ -147,10 +152,11 @@ export default function IdeaForm({ onSubmit, onClose }: Props) {
               }
               className={inputClass}
               required
+              aria-required="true"
             />
           </Field>
 
-          <Field label={typeConfig.summaryLabel} required hint={`${form.summary.length}/500`}>
+          <Field label={typeConfig.summaryLabel} required hint={`${form.summary.length}/500`} hintId="summary-count">
             <textarea
               value={form.summary}
               onChange={(e) => set('summary', e.target.value.slice(0, 500))}
@@ -158,7 +164,9 @@ export default function IdeaForm({ onSubmit, onClose }: Props) {
               rows={4}
               className={inputClass}
               required
+              aria-required="true"
               maxLength={500}
+              aria-describedby="summary-count"
             />
           </Field>
 
@@ -249,20 +257,24 @@ function Field({
   label,
   required,
   hint,
+  hintId,
   children,
 }: {
   label: string;
   required?: boolean;
   hint?: string;
+  hintId?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-        {hint && <span className="font-normal text-gray-400 ml-1 text-xs">{hint}</span>}
-      </label>
+      <div className="flex items-baseline justify-between mb-1">
+        <label className="block text-sm font-medium text-gray-700">
+          {label}
+          {required && <span aria-hidden="true" className="text-red-500 ml-0.5">*</span>}
+        </label>
+        {hint && <span id={hintId} className="font-normal text-gray-400 text-xs">{hint}</span>}
+      </div>
       {children}
     </div>
   );

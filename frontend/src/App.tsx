@@ -61,7 +61,7 @@ export default function App() {
 
   useEffect(() => {
     loadIdeas();
-    fetchSession().then(({ user }) => setUser(user));
+    fetchSession().then(({ user }) => setUser(user)).catch(() => {});
   }, []);
 
   // Handle auth errors from OAuth callback redirect
@@ -114,8 +114,11 @@ export default function App() {
     ? filteredIdeas.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
     : filteredIdeas;
 
+  const [voteError, setVoteError] = useState<string | null>(null);
+
   async function handleVote(id: string) {
     if (votedIds.has(id)) return;
+    setVoteError(null);
     try {
       const { votes } = await voteForIdea(id);
       setIdeas((prev) => prev.map((idea) => (idea.id === id ? { ...idea, votes } : idea)));
@@ -124,7 +127,7 @@ export default function App() {
       setVotedIds(next);
       saveVotedIds(next);
     } catch (err) {
-      console.error('Vote failed:', err);
+      setVoteError(err instanceof Error ? err.message : 'Vote failed. Please try again.');
     }
   }
 
@@ -169,8 +172,10 @@ export default function App() {
         </div>
 
         {/* Tabs — centered in the blank header space */}
-        <div className="flex-1 flex justify-center gap-[30px]">
+        <div role="tablist" aria-label="View" className="flex-1 flex justify-center gap-[30px]">
           <button
+            role="tab"
+            aria-selected={view === 'grid'}
             onClick={() => setView('grid')}
             className="font-display font-medium text-[15px] py-3.5 border-b-2 -mb-px transition-colors"
             style={{
@@ -181,6 +186,8 @@ export default function App() {
             Roadmap ideas
           </button>
           <button
+            role="tab"
+            aria-selected={view === 'timeline'}
             onClick={() => setView('timeline')}
             className="font-display font-medium text-[15px] py-3.5 border-b-2 -mb-px transition-colors"
             style={{
@@ -196,11 +203,11 @@ export default function App() {
           <button
             onClick={loadIdeas}
             disabled={loading}
-            title="Refresh"
+            aria-label="Refresh ideas"
             className="w-[42px] h-[42px] rounded-full flex items-center justify-center border transition-colors disabled:opacity-30"
             style={{ borderColor: '#cfd0c9', color: '#54585f' }}
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           </button>
 
           {isLoggedIn ? (
@@ -261,6 +268,12 @@ export default function App() {
           />
 
           <main className="flex-1 min-w-0">
+            {voteError && (
+              <div role="alert" className="mb-4 flex items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded px-4 py-3">
+                <span>{voteError}</span>
+                <button onClick={() => setVoteError(null)} aria-label="Dismiss" className="text-red-400 hover:text-red-600 flex-shrink-0">✕</button>
+              </div>
+            )}
             {loading && ideas.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-brand-300">
                 <Loader2 className="w-8 h-8 animate-spin mb-3" />
@@ -313,10 +326,11 @@ export default function App() {
                 </div>
 
                 {shouldPaginate && totalPages > 1 && (
-                  <div className="flex items-center justify-end gap-2 mt-8">
+                  <nav aria-label="Pagination" className="flex items-center justify-end gap-2 mt-8">
                     <button
                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
+                      aria-label="Previous page"
                       className="font-display font-medium text-sm px-3 h-10 rounded border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       style={{ borderColor: '#cfd0c9', color: '#54585f' }}
                     >
@@ -326,6 +340,8 @@ export default function App() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
+                        aria-label={`Page ${page}`}
+                        aria-current={currentPage === page ? 'page' : undefined}
                         className="font-display font-medium text-sm w-10 h-10 rounded border transition-colors"
                         style={currentPage === page
                           ? { background: '#16181c', color: '#f6f6f3', borderColor: '#16181c' }
@@ -337,12 +353,13 @@ export default function App() {
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
+                      aria-label="Next page"
                       className="font-display font-medium text-sm px-3 h-10 rounded border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       style={{ borderColor: '#cfd0c9', color: '#54585f' }}
                     >
                       Next
                     </button>
-                  </div>
+                  </nav>
                 )}
               </>
             )}

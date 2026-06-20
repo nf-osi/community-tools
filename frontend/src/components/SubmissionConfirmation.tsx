@@ -24,6 +24,9 @@ export default function SubmissionConfirmation({ idea, onClose }: Props) {
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmation-title"
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -31,19 +34,20 @@ export default function SubmissionConfirmation({ idea, onClose }: Props) {
         {/* Header */}
         <div className="flex items-start justify-between p-6 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+            <div aria-hidden="true" className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900">Idea submitted!</h2>
+              <h2 id="confirmation-title" className="text-base font-bold text-gray-900">Idea submitted!</h2>
               <p className="text-sm text-gray-500">Thank you for contributing to the NF-OSI roadmap.</p>
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="text-gray-400 hover:text-gray-600 rounded p-1.5 hover:bg-gray-100 transition-colors flex-shrink-0"
           >
-            <X className="w-4 h-4" />
+            <X aria-hidden="true" className="w-4 h-4" />
           </button>
         </div>
 
@@ -67,12 +71,12 @@ export default function SubmissionConfirmation({ idea, onClose }: Props) {
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded bg-brand-700 text-white text-sm font-semibold hover:bg-brand-800 transition-colors shadow-sm"
                 >
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink aria-hidden="true" className="w-4 h-4" />
                   Open Discussion Thread on Synapse
                 </a>
                 {/* Subscribe tip */}
                 <div className="flex items-start gap-2.5 bg-brand-50 border border-brand-100 rounded px-3 py-2.5">
-                  <Bell className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
+                  <Bell aria-hidden="true" className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-brand-700 leading-relaxed">
                     <span className="font-semibold">Tip:</span> Synapse lets you subscribe to discussion threads. Click <span className="font-medium">Follow</span> in the thread to get email notifications when the community comments or the NF-OSI team responds.
                   </p>

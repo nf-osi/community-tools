@@ -39,6 +39,7 @@ export default function IdeaCard({ idea, voted, isLoggedIn, onVote, onSelect, on
     >
       {/* Accent bar */}
       <div
+        aria-hidden="true"
         className="absolute left-0 top-0 bottom-0 transition-all duration-200"
         style={{ width: hovered ? '4px' : '0', background: focusColor }}
       />
@@ -49,8 +50,8 @@ export default function IdeaCard({ idea, voted, isLoggedIn, onVote, onSelect, on
         <button
           onClick={handleVote}
           disabled={voted}
-          title={voted ? 'Already voted' : 'Upvote this idea'}
-          className="text-right self-start focus:outline-none"
+          aria-label={voted ? `Already voted — ${idea.votes} votes` : `Upvote — ${idea.votes} votes`}
+          className="text-right self-start focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1f3df0] focus-visible:ring-offset-2 rounded"
           onMouseEnter={() => setVoteHovered(true)}
           onMouseLeave={() => setVoteHovered(false)}
         >
@@ -107,7 +108,9 @@ export default function IdeaCard({ idea, voted, isLoggedIn, onVote, onSelect, on
             {dateLabel}
           </span>
           {idea.communitySubmitted && (
-            <Star className="w-3.5 h-3.5" style={{ fill: '#d8b021', color: '#d8b021' }} />
+            <span title="Community submitted" aria-label="Community submitted">
+              <Star aria-hidden="true" className="w-3.5 h-3.5" style={{ fill: '#d8b021', color: '#d8b021' }} />
+            </span>
           )}
         </div>
 

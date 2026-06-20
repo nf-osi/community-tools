@@ -360,7 +360,10 @@ app.post('/api/ideas/:id/vote', async (req, res) => {
   try {
     const headers = synapseHeaders();
     const { id } = req.params;
-    const userId = String(req.session.user.synapseId || req.session.user.id);
+    const userId = req.session.user.synapseId ? String(req.session.user.synapseId) : null;
+    if (!userId) {
+      return res.status(400).json({ error: 'Could not resolve your Synapse user ID — please log out and log in again' });
+    }
 
     const annoResp = await axios.get(
       `${SYNAPSE_BASE}/entity/${id}/annotations2`,

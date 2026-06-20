@@ -30,12 +30,15 @@ export default function IdeaDetail({ idea, voted, isLoggedIn, onVote, onClose, o
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="idea-detail-title"
       className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 pt-16 overflow-y-auto"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-white rounded shadow-2xl w-full max-w-2xl mb-8 overflow-hidden">
         {/* Idea-type accent strip */}
-        <div className={`h-1 ${idea.ideaType === 'New Data' ? 'bg-emerald-400' : 'bg-brand-500'}`} />
+        <div aria-hidden="true" className={`h-1 ${idea.ideaType === 'New Data' ? 'bg-emerald-400' : 'bg-brand-500'}`} />
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-3 border-b border-gray-100">
           <div className="flex-1 pr-4">
@@ -43,7 +46,7 @@ export default function IdeaDetail({ idea, voted, isLoggedIn, onVote, onClose, o
             <div className="flex flex-wrap gap-2 mb-3">
               {idea.ideaType && (
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${IDEA_TYPE_BADGE[idea.ideaType]}`}>
-                  {idea.ideaType === 'Infrastructure' ? <Wrench className="w-3.5 h-3.5" /> : <Dna className="w-3.5 h-3.5" />}
+                  <span aria-hidden="true">{idea.ideaType === 'Infrastructure' ? <Wrench className="w-3.5 h-3.5" /> : <Dna className="w-3.5 h-3.5" />}</span>
                   {idea.ideaType}
                 </span>
               )}
@@ -57,18 +60,19 @@ export default function IdeaDetail({ idea, voted, isLoggedIn, onVote, onClose, o
               )}
               {idea.communitySubmitted && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-50 text-yellow-700">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                  <Star aria-hidden="true" className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                   Community Submitted
                 </span>
               )}
             </div>
-            <h2 className="font-display italic text-2xl text-gray-900 leading-snug">{idea.title}</h2>
+            <h2 id="idea-detail-title" className="font-display italic text-2xl text-gray-900 leading-snug">{idea.title}</h2>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="text-gray-400 hover:text-gray-600 rounded p-1.5 hover:bg-gray-100 flex-shrink-0 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X aria-hidden="true" className="w-5 h-5" />
           </button>
         </div>
 
@@ -81,7 +85,7 @@ export default function IdeaDetail({ idea, voted, isLoggedIn, onVote, onClose, o
           </div>
 
           {/* Metadata grid */}
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+          <dl className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
             <MetaField label="Priority" value={idea.priority} />
             <MetaField label="Submitted by" value={idea.submitter} icon={<User className="w-3.5 h-3.5" />} />
             {idea.targetDate && (
@@ -99,7 +103,7 @@ export default function IdeaDetail({ idea, voted, isLoggedIn, onVote, onClose, o
             {idea.suggestedFunding && (
               <MetaField label="Suggested funding" value={idea.suggestedFunding} icon={<DollarSign className="w-3.5 h-3.5" />} />
             )}
-          </div>
+          </dl>
 
           {/* Vote + discussion */}
           <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
@@ -123,7 +127,7 @@ export default function IdeaDetail({ idea, voted, isLoggedIn, onVote, onClose, o
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 rounded font-semibold text-sm bg-white border border-brand-300 text-brand-700 hover:bg-brand-50 hover:border-brand-400 transition-all shadow-sm"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink aria-hidden="true" className="w-4 h-4" />
                 Discuss on Synapse
               </a>
             )}
