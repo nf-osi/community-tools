@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, Loader2, Lightbulb } from 'lucide-react';
 import { fetchIdeas, createIdea, voteForIdea, fetchSession, logout } from './api';
 import type { Idea, IdeaFormData, Status, FocusArea, User } from './types';
@@ -44,7 +44,17 @@ export default function App() {
   const [dateTo, setDateTo] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const PAGE_SIZE = 7;
+  const PAGE_SIZE = 15;
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => setHeaderHeight(entry.contentRect.height));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   async function loadIdeas() {
     setLoading(true);
@@ -150,7 +160,8 @@ export default function App() {
   return (
     <div className="min-h-screen">
       {/* Masthead */}
-      <header className="max-w-7xl mx-auto px-10 pt-8 flex items-end gap-5 border-b border-[#e2e2dc]">
+      <div ref={headerRef} className="sticky top-0 z-40 bg-white border-b border-[#e2e2dc]">
+      <header className="max-w-7xl mx-auto px-10 pt-8 flex items-end gap-5">
         <div className="flex items-start gap-5 flex-shrink-0 pb-px">
           <svg viewBox="0 0 40 40" className="w-10 h-10 flex-shrink-0 mt-1" aria-hidden="true">
             <circle cx="15" cy="17" r="9.5" fill="#0d6e62" opacity=".82"/>
@@ -245,6 +256,7 @@ export default function App() {
           )}
         </div>
       </header>
+      </div>
 
       {/* Main layout */}
       <div className="max-w-7xl mx-auto px-10 pt-8 pb-16">
@@ -259,6 +271,7 @@ export default function App() {
             totalCount={ideas.length}
             filteredCount={filteredIdeas.length}
             ideas={ideas}
+            stickyTop={headerHeight + 24}
             onStatusChange={setStatusFilter}
             onFocusChange={setFocusFilter}
             onCommunityToggle={setCommunityOnly}
@@ -326,39 +339,49 @@ export default function App() {
                 </div>
 
                 {shouldPaginate && totalPages > 1 && (
-                  <nav aria-label="Pagination" className="flex items-center justify-end gap-2 mt-8">
-                    <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      aria-label="Previous page"
-                      className="font-display font-medium text-sm px-3 h-10 rounded border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      style={{ borderColor: '#cfd0c9', color: '#54585f' }}
+                  <nav aria-label="Pagination" className="mt-10 flex flex-col items-center gap-2.5">
+                    <p className="font-display text-[12px] uppercase tracking-[0.12em]" style={{ color: '#8a8f98' }}>
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <div
+                      className="inline-flex items-center gap-1.5 rounded-2xl px-5 py-3.5"
+                      style={{ background: '#fff', border: '1px solid #e2e2dc', boxShadow: '0 4px 24px rgba(22,24,28,0.10), 0 1px 4px rgba(22,24,28,0.06)' }}
                     >
-                      Prev
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                       <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        aria-label={`Page ${page}`}
-                        aria-current={currentPage === page ? 'page' : undefined}
-                        className="font-display font-medium text-sm w-10 h-10 rounded border transition-colors"
-                        style={currentPage === page
-                          ? { background: '#16181c', color: '#f6f6f3', borderColor: '#16181c' }
-                          : { borderColor: '#cfd0c9', color: '#54585f' }}
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        aria-label="Previous page"
+                        className="font-display font-medium text-sm px-4 h-9 rounded-lg border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        style={{ borderColor: '#cfd0c9', color: '#54585f' }}
                       >
-                        {page}
+                        ← Prev
                       </button>
-                    ))}
-                    <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                      aria-label="Next page"
-                      className="font-display font-medium text-sm px-3 h-10 rounded border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      style={{ borderColor: '#cfd0c9', color: '#54585f' }}
-                    >
-                      Next
-                    </button>
+                      <div className="flex items-center gap-1 mx-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            aria-label={`Page ${page}`}
+                            aria-current={currentPage === page ? 'page' : undefined}
+                            className="font-display font-semibold text-sm w-9 h-9 rounded-lg border transition-all"
+                            style={currentPage === page
+                              ? { background: '#16181c', color: '#f6f6f3', borderColor: '#16181c', boxShadow: '0 2px 8px rgba(22,24,28,0.18)' }
+                              : { borderColor: '#e2e2dc', color: '#54585f', background: 'transparent' }}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        aria-label="Next page"
+                        className="font-display font-medium text-sm px-4 h-9 rounded-lg border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        style={{ borderColor: '#cfd0c9', color: '#54585f' }}
+                      >
+                        Next →
+                      </button>
+                    </div>
                   </nav>
                 )}
               </>

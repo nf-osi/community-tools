@@ -12,6 +12,7 @@ interface Props {
   totalCount: number;
   filteredCount: number;
   ideas: Idea[];
+  stickyTop?: number;
   onStatusChange: (v: Status | 'All') => void;
   onFocusChange: (v: FocusArea | 'All') => void;
   onCommunityToggle: (v: boolean) => void;
@@ -77,7 +78,7 @@ function quarterKey(q: string): number {
 
 export default function FacetFilters({
   statusFilter, focusFilter, communityOnly, sortBy, dateFrom, dateTo,
-  totalCount, ideas,
+  totalCount, ideas, stickyTop,
   onStatusChange, onFocusChange, onCommunityToggle, onSortChange,
   onDateFromChange, onDateToChange,
 }: Props) {
@@ -99,7 +100,7 @@ export default function FacetFilters({
 
 
   return (
-    <aside className="w-[200px] flex-shrink-0 sticky top-6 self-start mt-12">
+    <aside className="w-[200px] flex-shrink-0 sticky self-start mt-12" style={{ top: stickyTop ?? 24 }}>
 
       {/* Sort */}
       <div className="mb-7">
