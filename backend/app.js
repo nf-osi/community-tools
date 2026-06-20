@@ -151,8 +151,9 @@ app.get('/oauth/callback', async (req, res) => {
     });
 
     const { sub, user_name, userid } = userResp.data;
-    console.log('[oauth/callback] userinfo:', { sub, user_name, userid });
-    req.session.user = { id: sub, synapseId: userid, username: user_name || sub };
+    const synapseId = userid != null ? parseInt(String(userid), 10) || undefined : undefined;
+    console.log('[oauth/callback] userinfo:', { sub, user_name, userid, synapseId });
+    req.session.user = { id: sub, synapseId, username: user_name || sub };
     console.log('[oauth/callback] session saved, redirecting to', POST_LOGIN_URL);
 
     res.redirect(POST_LOGIN_URL);
@@ -254,8 +255,9 @@ app.post('/api/ideas', async (req, res) => {
     const submitter = req.session.user.username;
     const submitterId = req.session.user.synapseId;
 
-    // Inject submitter fields (from session) before schema validation
-    const bodyWithSubmitter = { ...req.body, submitter, submitterId };
+    // Validate user-supplied fields + server-resolved submitter; exclude submitterId
+    // (server-generated, not user input)
+    const bodyWithSubmitter = { ...req.body, submitter };
     if (!validateIdea(bodyWithSubmitter)) {
       const errors = validateIdea.errors.map((e) => {
         const field = e.instancePath.replace(/^\//, '') || e.params?.missingProperty || 'request';
