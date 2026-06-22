@@ -151,8 +151,9 @@ app.get('/oauth/callback', async (req, res) => {
     });
 
     const { sub, user_name, userid } = userResp.data;
-    console.log('[oauth/callback] userinfo:', { sub, user_name, userid });
-    req.session.user = { id: sub, synapseId: userid, username: user_name || sub };
+    const synapseId = userid != null ? parseInt(String(userid), 10) || undefined : undefined;
+    console.log('[oauth/callback] userinfo:', { sub, user_name, userid, synapseId });
+    req.session.user = { id: sub, synapseId, username: user_name || sub };
     console.log('[oauth/callback] session saved, redirecting to', POST_LOGIN_URL);
 
     res.redirect(POST_LOGIN_URL);
@@ -254,8 +255,9 @@ app.post('/api/ideas', async (req, res) => {
     const submitter = req.session.user.username;
     const submitterId = req.session.user.synapseId;
 
-    // Inject submitter fields (from session) before schema validation
-    const bodyWithSubmitter = { ...req.body, submitter, submitterId };
+    // Validate user-supplied fields + server-resolved submitter; exclude submitterId
+    // (server-generated, not user input)
+    const bodyWithSubmitter = { ...req.body, submitter };
     if (!validateIdea(bodyWithSubmitter)) {
       const errors = validateIdea.errors.map((e) => {
         const field = e.instancePath.replace(/^\//, '') || e.params?.missingProperty || 'request';
@@ -360,7 +362,10 @@ app.post('/api/ideas/:id/vote', async (req, res) => {
   try {
     const headers = synapseHeaders();
     const { id } = req.params;
-    const userId = String(req.session.user.synapseId || req.session.user.id);
+    const userId = req.session.user.synapseId ? String(req.session.user.synapseId) : null;
+    if (!userId) {
+      return res.status(400).json({ error: 'Could not resolve your Synapse user ID — please log out and log in again' });
+    }
 
     const annoResp = await axios.get(
       `${SYNAPSE_BASE}/entity/${id}/annotations2`,

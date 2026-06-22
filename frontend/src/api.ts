@@ -7,7 +7,15 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
   const body = await res.json();
-  if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
+  if (!res.ok) {
+    const detail = Array.isArray(body.details) ? ` (${body.details.join('; ')})` : '';
+    const fallback =
+      res.status === 401 ? 'Please log in to continue.' :
+      res.status === 409 ? 'You have already voted for this idea.' :
+      res.status >= 500 ? 'Something went wrong on our end. Please try again later.' :
+      `Request failed (${res.status}).`;
+    throw new Error((body.error ? `${body.error}${detail}` : fallback));
+  }
   return body as T;
 }
 
