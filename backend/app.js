@@ -13,6 +13,10 @@ const OAUTH_CLIENT_ID = process.env.SYNAPSE_OAUTH_CLIENT_ID;
 const OAUTH_CLIENT_SECRET = process.env.SYNAPSE_OAUTH_CLIENT_SECRET;
 const REDIRECT_URI_ENV = process.env.OAUTH_REDIRECT_URI;
 const POST_LOGIN_URL = process.env.POST_LOGIN_URL || '/';
+// Local-dev only: skip the OAuth round-trip and sign in as the service-token's
+// Synapse user. Hard-gated to non-production so it can never enable in prod.
+const DEV_AUTH_BYPASS =
+  process.env.DEV_AUTH_BYPASS === 'true' && process.env.NODE_ENV !== 'production';
 
 function getRedirectUri(req) {
   if (REDIRECT_URI_ENV) return REDIRECT_URI_ENV;
@@ -87,7 +91,22 @@ function buildAnnotations(id, etag, data) {
 // ── Auth routes ──────────────────────────────────────────────────────────────
 
 // GET /api/auth/login — redirect to Synapse authorization endpoint
-app.get('/api/auth/login', (req, res) => {
+app.get('/api/auth/login', async (req, res) => {
+  // Dev bypass: establish a session from the service token's Synapse profile.
+  if (DEV_AUTH_BYPASS) {
+    try {
+      const profileResp = await axios.get(`${SYNAPSE_BASE}/userProfile`, { headers: synapseHeaders() });
+      const { ownerId, userName } = profileResp.data;
+      const synapseId = ownerId != null ? parseInt(String(ownerId), 10) || undefined : undefined;
+      req.session.user = { id: String(ownerId), synapseId, username: userName || `dev-${ownerId}` };
+      console.log('[auth/login] DEV_AUTH_BYPASS — signed in as', req.session.user);
+      return res.redirect(POST_LOGIN_URL);
+    } catch (err) {
+      console.error('[auth/login] dev bypass failed:', err.response?.data || err.message);
+      return res.redirect(`${POST_LOGIN_URL}?auth_error=dev_bypass_failed`);
+    }
+  }
+
   const state = crypto.randomBytes(16).toString('hex');
   const nonce = crypto.randomBytes(16).toString('hex');
   req.session.oauthState = state;

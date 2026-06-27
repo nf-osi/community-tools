@@ -21,6 +21,8 @@ Viewing the roadmap requires no login.
 
 **Backend writes (service token)**: All updates — vote counts, idea annotations — are written by the backend using the `SYNAPSE_AUTH_TOKEN` service account token, which stays server-side and is never exposed to the client.
 
+**Local dev without OAuth**: If you don't have an OAuth client yet, set `DEV_AUTH_BYPASS=true` and a `SYNAPSE_AUTH_TOKEN` in `.env`. The "Log in" button then signs you in as the service token's Synapse user, skipping the OAuth round-trip. This is hard-disabled when `NODE_ENV=production`.
+
 ## Setup
 
 ### 1. Install dependencies
@@ -42,7 +44,7 @@ cp .env.example .env
 ```bash
 npm start
 ```
-Visit http://127.0.0.1:3001
+Visit http://127.0.0.1:9000
 
 **Two-server dev mode** (faster iteration with Vite HMR):
 ```bash
