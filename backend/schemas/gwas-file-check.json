@@ -1,0 +1,123 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "summary", "resolved_context", "roles", "issues", "questions", "unused_files"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ready", "needs_input", "blocked"],
+      "description": "ready = submittable; needs_input = a choice/confirmation required; blocked = required input missing/invalid."
+    },
+    "summary": {
+      "type": "string",
+      "description": "One user-facing sentence describing the verdict."
+    },
+    "resolved_context": {
+      "description": "Best-effort job context. Must be complete when status=ready; null when blocked.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["genotype", "phenotype"],
+          "properties": {
+            "genotype": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "kind"],
+              "properties": {
+                "id": { "type": "string" },
+                "kind": { "type": "string", "enum": ["vcf", "plink"] }
+              }
+            },
+            "genotype_bim": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id"],
+              "properties": { "id": { "type": "string" } }
+            },
+            "genotype_fam": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id"],
+              "properties": { "id": { "type": "string" } }
+            },
+            "phenotype": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id"],
+              "properties": { "id": { "type": "string" } }
+            },
+            "covariate": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id"],
+              "properties": { "id": { "type": "string" } }
+            }
+          }
+        },
+        "output_parent_id": { "type": ["string", "null"] },
+        "params": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "trait_type": { "type": "string", "enum": ["binary", "quantitative"] },
+            "pheno_name": { "type": "string" },
+            "pheno_coding_01": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file_id", "file_name", "assigned_role", "confidence", "reason"],
+        "properties": {
+          "file_id": { "type": "string" },
+          "file_name": { "type": "string" },
+          "assigned_role": {
+            "type": "string",
+            "enum": ["genotype", "genotype_bim", "genotype_fam", "phenotype", "covariate", "unknown"]
+          },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "code", "message"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["error", "warning", "info"] },
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "suggestion": { "type": "string" }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "question"],
+        "properties": {
+          "id": { "type": "string" },
+          "question": { "type": "string" },
+          "applies_to_role": { "type": "string" },
+          "options": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "unused_files": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

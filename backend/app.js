@@ -175,6 +175,9 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── GWAS agent routes ─────────────────────────────────────────────────────────
+app.use('/api/gwas', require('./gwas'));
+
 // ── Ideas routes ──────────────────────────────────────────────────────────────
 
 // GET /api/ideas — list all ideas from Synapse

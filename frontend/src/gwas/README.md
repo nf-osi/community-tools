@@ -19,16 +19,20 @@ community-tools app. It reuses the existing Synapse OAuth session and the
 4. **Run** — when status is `ready`, `submitJob` posts `resolved_context`; the
    backend attaches the user's token and invokes the GWAS submit Lambda.
 
-## Backend endpoints to implement (in `backend/app.js`)
-
-The frontend already calls these; they're the remaining server work:
+## Backend endpoints (implemented in `backend/gwas.js`)
 
 | Method & path | Body | Returns | Notes |
 |---|---|---|---|
-| `GET /api/auth/session` | — | `{ user }` | Already exists. |
-| `GET /api/gwas/entity/:synId` | — | `SynapseFileSelection` | Fetch entity metadata + a small text/VCF preview (use the session user's token). |
-| `POST /api/gwas/check-files` | `{ selected_files, output_parent_id?, user_params? }` | `FileCheckResult` | Call Claude with the file-check system prompt and the JSON schema as a forced tool. |
-| `POST /api/gwas/submit` | `{ context }` | `{ job_id, batchJobId? }` | Invoke the `nf-gwas-submit` Lambda with `{ synapse_token: <session token>, context }`. |
+| `GET /api/auth/session` | — | `{ user }` | In `app.js`. |
+| `GET /api/gwas/entity/:synId` | — | `SynapseFileSelection` | Entity metadata + file handle (size/contentType) + a best-effort ~16KB text/VCF preview. |
+| `POST /api/gwas/check-files` | `{ selected_files, output_parent_id?, user_params? }` | `FileCheckResult` | Calls Claude with the file-check system prompt and `schemas/gwas-file-check.json` as a forced tool; AJV-validates the verdict. Needs `ANTHROPIC_API_KEY`. |
+| `POST /api/gwas/submit` | `{ context }` | `{ job_id, batchJobId? }` | Invokes the `nf-gwas-submit` Lambda. Needs `GWAS_SUBMIT_FUNCTION` + AWS creds. |
+
+**Auth model:** GWAS routes require a logged-in session (gating), but Synapse
+reads and the token forwarded to the Lambda use the server-side **service token**
+(`SYNAPSE_AUTH_TOKEN`) — this app never persists the user's OAuth token. To run
+jobs as the end user instead, persist the user access token at OAuth callback and
+forward it from `/submit` in place of the service token.
 
 Types live in `types.ts`; `FileCheckResult` mirrors
 `hackathon/frontend/file-check.schema.json` exactly, so the agent's structured
