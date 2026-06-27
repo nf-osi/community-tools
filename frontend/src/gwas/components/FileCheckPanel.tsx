@@ -1,6 +1,6 @@
 import { AlertCircle, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
 import StatusBadge from './StatusBadge';
-import { SEVERITY_META } from '../types';
+import { SEVERITY_META, APPROPRIATENESS_META } from '../types';
 import type { FileCheckResult, GwasRole, IssueSeverity } from '../types';
 
 const ROLE_LABEL: Record<GwasRole, string> = {
@@ -32,6 +32,29 @@ export default function FileCheckPanel({ result }: { result: FileCheckResult }) 
         </div>
         <StatusBadge status={result.status} />
       </div>
+
+      {/* Appropriateness verdict */}
+      {result.appropriateness && (
+        <div
+          className="mb-4 rounded-lg px-3 py-2.5"
+          style={{ background: APPROPRIATENESS_META[result.appropriateness.verdict].bg }}
+        >
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="font-display text-[12px] uppercase tracking-[0.08em]" style={{ color: '#8a8f98' }}>
+              Appropriateness
+            </span>
+            <span
+              className="font-display font-medium text-[12px]"
+              style={{ color: APPROPRIATENESS_META[result.appropriateness.verdict].color }}
+            >
+              {APPROPRIATENESS_META[result.appropriateness.verdict].label}
+            </span>
+          </div>
+          <p className="text-[13px]" style={{ color: '#54585f' }}>
+            {result.appropriateness.rationale}
+          </p>
+        </div>
+      )}
 
       {/* Role assignments */}
       {result.roles.length > 0 && (
@@ -69,6 +92,14 @@ export default function FileCheckPanel({ result }: { result: FileCheckResult }) 
             >
               <SeverityIcon severity={issue.severity} />
               <div>
+                {issue.category && (
+                  <span
+                    className="font-display text-[10px] uppercase tracking-[0.06em] mr-1.5 px-1.5 py-0.5 rounded align-[1px]"
+                    style={{ background: '#ffffffcc', color: '#54585f' }}
+                  >
+                    {issue.category === 'appropriateness' ? 'Fit' : 'Input'}
+                  </span>
+                )}
                 <span style={{ color: '#16181c' }}>{issue.message}</span>
                 {issue.suggestion && (
                   <span className="block text-[13px] mt-0.5" style={{ color: '#54585f' }}>

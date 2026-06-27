@@ -41,11 +41,25 @@ export interface RoleAssignment {
 
 export type IssueSeverity = 'error' | 'warning' | 'info';
 
+export type IssueCategory = 'inputs' | 'appropriateness';
+
 export interface CheckIssue {
   severity: IssueSeverity;
+  category?: IssueCategory;
   code: string;
   message: string;
   suggestion?: string;
+}
+
+export type AppropriatenessVerdict =
+  | 'appropriate'
+  | 'questionable'
+  | 'inappropriate'
+  | 'unknown';
+
+export interface Appropriateness {
+  verdict: AppropriatenessVerdict;
+  rationale: string;
 }
 
 export interface CheckQuestion {
@@ -70,6 +84,7 @@ export interface ResolvedContext {
 export interface FileCheckResult {
   status: CheckStatus;
   summary: string;
+  appropriateness: Appropriateness;
   resolved_context: ResolvedContext | null;
   roles: RoleAssignment[];
   issues: CheckIssue[];
@@ -104,4 +119,14 @@ export const SEVERITY_META: Record<
   error:   { color: '#b0341d', bg: '#f6e2dd' },
   warning: { color: '#c4720c', bg: '#f6ecdc' },
   info:    { color: '#125e81', bg: '#e8f3f9' },
+};
+
+export const APPROPRIATENESS_META: Record<
+  AppropriatenessVerdict,
+  { label: string; color: string; bg: string }
+> = {
+  appropriate:   { label: 'Appropriate',   color: '#1d7a4f', bg: '#e1f1e8' },
+  questionable:  { label: 'Questionable',  color: '#c4720c', bg: '#f6ecdc' },
+  inappropriate: { label: 'Not appropriate', color: '#b0341d', bg: '#f6e2dd' },
+  unknown:       { label: 'Undetermined',  color: '#54585f', bg: '#f1f1ec' },
 };

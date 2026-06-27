@@ -1,7 +1,7 @@
 {
   "type": "object",
   "additionalProperties": false,
-  "required": ["status", "summary", "resolved_context", "roles", "issues", "questions", "unused_files"],
+  "required": ["status", "summary", "appropriateness", "resolved_context", "roles", "issues", "questions", "unused_files"],
   "properties": {
     "status": {
       "type": "string",
@@ -95,6 +95,7 @@
         "required": ["severity", "code", "message"],
         "properties": {
           "severity": { "type": "string", "enum": ["error", "warning", "info"] },
+          "category": { "type": "string", "enum": ["inputs", "appropriateness"] },
           "code": { "type": "string" },
           "message": { "type": "string" },
           "suggestion": { "type": "string" }
@@ -118,6 +119,20 @@
     "unused_files": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "appropriateness": {
+      "type": "object",
+      "description": "Whether running this analysis on these data with these settings is scientifically sound and feasible — independent of whether the files are correctly mapped.",
+      "additionalProperties": false,
+      "required": ["verdict", "rationale"],
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": ["appropriate", "questionable", "inappropriate", "unknown"],
+          "description": "appropriate = sound to run; questionable = run-able but caveated (e.g. low power); inappropriate = should not run (e.g. wrong data type); unknown = not enough metadata to judge."
+        },
+        "rationale": { "type": "string" }
+      }
     }
   }
 }
