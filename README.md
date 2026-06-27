@@ -42,13 +42,16 @@ cp .env.example .env
 ```bash
 npm start
 ```
-Visit http://localhost:3001
+Visit http://127.0.0.1:3001
 
 **Two-server dev mode** (faster iteration with Vite HMR):
 ```bash
 npm run dev
 ```
-Visit http://localhost:5173
+Visit http://127.0.0.1:5173
+
+> Use `127.0.0.1`, not `localhost`, so the session-cookie domain matches the
+> OAuth redirect URI (see `.env.example`); otherwise login silently fails.
 
 ## Architecture
 
