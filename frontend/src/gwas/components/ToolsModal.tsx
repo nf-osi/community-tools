@@ -32,7 +32,8 @@ export default function ToolsModal({ engine, onClose }: { engine: Engine; onClos
               Tools &amp; post-GWAS next steps
             </h2>
             <p className="text-sm mt-0.5" style={{ color: '#8a8f98' }}>
-              What this agent runs and why — plus the interpretation steps it does not cover.
+              The tools the agent runs in our cloud and why — plus interpretation steps it
+              doesn't orchestrate yet.
             </p>
           </div>
           <button onClick={onClose} aria-label="Close" className="p-1.5 rounded hover:bg-gray-100" style={{ color: '#8a8f98' }}>
@@ -44,7 +45,7 @@ export default function ToolsModal({ engine, onClose }: { engine: Engine; onClos
           {/* Pipeline tools */}
           <section>
             <h3 className="font-display font-semibold text-[13px] uppercase tracking-[0.08em] mb-3" style={{ color: '#8a8f98' }}>
-              Pipeline tools
+              Tools the agent runs
             </h3>
             <div className="space-y-4">
               {GWAS_TOOLS.map((t) => {
@@ -86,9 +87,10 @@ export default function ToolsModal({ engine, onClose }: { engine: Engine; onClos
               Post-GWAS interpretation — recommended next steps
             </h3>
             <p className="text-[13px] mb-3" style={{ color: '#54585f' }}>
-              This agent produces summary statistics, plots, and a first-pass narrative. It does
-              <span className="font-medium" style={{ color: '#16181c' }}> not </span>
-              run the steps below — these are where you take the results next.
+              The agent currently runs association, plots, and a first-pass narrative. It doesn't
+              <span className="font-medium" style={{ color: '#16181c' }}> yet </span>
+              orchestrate the steps below — recommended follow-ups, and good candidates for
+              future agent steps.
             </p>
             <div className="space-y-3">
               {POST_GWAS_STEPS.map((s) => (

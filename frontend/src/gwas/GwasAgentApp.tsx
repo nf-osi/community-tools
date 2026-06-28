@@ -283,7 +283,7 @@ export default function GwasAgentApp() {
         <section>
           <div className="flex items-start justify-between gap-4 mb-1">
             <h2 className="font-display font-semibold text-[15px]" style={{ color: '#16181c' }}>
-              Tools in this pipeline
+              Tools the agent runs
             </h2>
             <button
               onClick={() => setShowToolsModal(true)}
@@ -294,8 +294,9 @@ export default function GwasAgentApp() {
             </button>
           </div>
           <p className="text-sm mb-3" style={{ color: '#8a8f98' }}>
-            What runs on your data, why each tool was chosen, and what it's good for.
-            The selected association engine is highlighted.
+            The agent runs these tools on your data in our cloud environment — here's each
+            one, why it was chosen, and what it's good for. The selected association engine
+            is highlighted.
           </p>
           <ToolsPanel engine={engine} />
         </section>
