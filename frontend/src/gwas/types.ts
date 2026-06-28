@@ -99,7 +99,8 @@ export interface FileCheckResult {
 
 export interface SubmitResult {
   job_id: string;
-  batchJobId?: string;
+  batchJobId?: string | null;
+  dryRun?: boolean;
 }
 
 export interface SessionUser {

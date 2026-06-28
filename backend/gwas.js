@@ -30,6 +30,10 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const GWAS_CHECK_MODEL = process.env.GWAS_CHECK_MODEL || 'claude-sonnet-4-6';
 const GWAS_SUBMIT_FUNCTION = process.env.GWAS_SUBMIT_FUNCTION; // Lambda name or ARN
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
+// Dev-only: /submit validates + returns a confirmation but does NOT launch the
+// job. Hard-gated to non-production so it can never silently no-op in prod.
+const GWAS_DRY_RUN =
+  process.env.GWAS_DRY_RUN === 'true' && process.env.NODE_ENV !== 'production';
 
 const PREVIEW_BYTES = 16 * 1024;
 const PREVIEW_EXTS = ['.tsv', '.csv', '.txt', '.vcf', '.ped', '.fam', '.bim', '.cov', '.pheno'];
@@ -282,15 +286,23 @@ router.post('/check-files', requireUserToken, async (req, res) => {
 
 // ── POST /api/gwas/submit ────────────────────────────────────────────────────
 router.post('/submit', requireUserToken, async (req, res) => {
-  if (!GWAS_SUBMIT_FUNCTION) {
-    return res.status(501).json({ error: 'Job submission is not configured (GWAS_SUBMIT_FUNCTION missing)' });
-  }
   const { context } = req.body || {};
   if (!context || !context.inputs || !context.inputs.genotype || !context.inputs.phenotype) {
     return res.status(400).json({ error: 'context.inputs.genotype and context.inputs.phenotype are required' });
   }
   if (!context.output_parent_id) {
     return res.status(400).json({ error: 'context.output_parent_id is required' });
+  }
+
+  // Dev dry-run: validate + return a normal confirmation, but DON'T launch a job.
+  if (GWAS_DRY_RUN) {
+    const job_id = context.job_id || `dryrun-${Math.random().toString(36).slice(2, 10)}`;
+    console.log(`[gwas/submit] DRY RUN (GWAS_DRY_RUN) — not launching a job (job_id=${job_id})`);
+    return res.json({ job_id, batchJobId: null, dryRun: true });
+  }
+
+  if (!GWAS_SUBMIT_FUNCTION) {
+    return res.status(501).json({ error: 'Job submission is not configured (GWAS_SUBMIT_FUNCTION missing)' });
   }
 
   let LambdaClient, InvokeCommand;
