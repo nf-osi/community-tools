@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw, Loader2, Lightbulb } from 'lucide-react';
+import { RefreshCw, Loader2, Lightbulb, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Link } from './router';
 import { fetchIdeas, createIdea, voteForIdea, fetchSession, logout } from './api';
 import type { Idea, IdeaFormData, Status, FocusArea, User } from './types';
 import FacetFilters from './components/FacetFilters';
@@ -186,7 +187,25 @@ export default function App() {
     <div className="min-h-screen">
       {/* Masthead */}
       <div ref={headerRef} className="sticky top-0 z-40 bg-white border-b border-[#e2e2dc]">
-      <header className="max-w-7xl mx-auto px-10 pt-8 flex items-end gap-5">
+      <div className="max-w-7xl mx-auto px-10 pt-3 flex items-center justify-between text-sm">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 hover:underline"
+          style={{ color: '#8a8f98' }}
+        >
+          <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" /> Home
+        </Link>
+        <a
+          href="https://nf.synapse.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 hover:underline"
+          style={{ color: '#8a8f98' }}
+        >
+          NF Data Portal <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+        </a>
+      </div>
+      <header className="max-w-7xl mx-auto px-10 pt-5 flex items-end gap-5">
         <div className="flex items-start gap-5 flex-shrink-0 pb-px">
           <svg viewBox="0 0 40 40" className="w-10 h-10 flex-shrink-0 mt-1" aria-hidden="true">
             <circle cx="15" cy="17" r="9.5" fill="#0d6e62" opacity=".82"/>
