@@ -1,6 +1,6 @@
 // Agent gallery registry. Add a new agent by appending an entry here.
 import type { LucideIcon } from 'lucide-react';
-import { Dna, FileSearch, Tags } from 'lucide-react';
+import { Dna, FileSearch, Tags, Network } from 'lucide-react';
 
 export type AgentStatus = 'available' | 'coming_soon';
 
@@ -42,6 +42,15 @@ export const AGENTS: AgentMeta[] = [
     tags: ['Curation', 'Annotations', 'Extraction'],
     icon: Tags,
     accent: '#c4720c',
+    status: 'coming_soon',
+  },
+  {
+    id: 'knowledge-graph',
+    name: 'Knowledge & Discourse Graph',
+    blurb: 'Build a knowledge graph of entities and relationships from a file, plus a discourse graph of questions, claims, and evidence — written back to Synapse.',
+    tags: ['Knowledge Graph', 'Discourse', 'Extraction'],
+    icon: Network,
+    accent: '#7b3df0',
     status: 'coming_soon',
   },
 ];
