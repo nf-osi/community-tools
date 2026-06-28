@@ -44,48 +44,51 @@ export default function GwasAgentApp() {
     setError(null);
     setResult(null);
     setSubmitted(null);
-    const params: UserParams = {
-      trait_type: traitType,
-      pheno_name: phenoName || undefined,
-      engine: 'auto', // the analysis job picks PLINK vs SAIGE from the data
-    };
     const dest = outputParent.trim();
-
-    // 1. Deterministic results-folder check (exists + writable) — first.
-    let folderIssue: { code: string; message: string } | null = null;
     try {
+      // 1. Results-folder check FIRST. If the destination isn't valid, return
+      // early with just that issue — don't spend a file-check agent call on a
+      // job that can't be submitted anyway.
+      let folderIssue: { code: string; message: string } | null = null;
       if (!dest) {
         folderIssue = { code: 'output_missing', message: 'Enter a results folder (Synapse id) you can write to.' };
       } else {
         const fr = await checkFolder(dest);
         if (!fr.ok) folderIssue = { code: fr.code, message: fr.message };
       }
-    } catch (err) {
-      folderIssue = { code: 'output_check_failed', message: err instanceof Error ? err.message : 'Results folder check failed.' };
-    }
+      if (folderIssue) {
+        setResult({
+          status: 'blocked',
+          summary: 'Results folder is not valid — fix it before checking files.',
+          appropriateness: { verdict: 'unknown', rationale: 'Not assessed — fix the results folder first.' },
+          resolved_context: null,
+          roles: [],
+          issues: [{
+            severity: 'error', category: 'inputs', code: folderIssue.code,
+            message: folderIssue.message,
+            suggestion: 'Pick a Synapse folder or project you can edit.',
+          }],
+          questions: [],
+          unused_files: [],
+        });
+        return; // early — skip the file-check agent
+      }
 
-    // 2. File-check agent.
-    try {
+      // 2. File-check agent (only reached when the folder is valid).
+      const params: UserParams = {
+        trait_type: traitType,
+        pheno_name: phenoName || undefined,
+        engine: 'auto', // the analysis job picks PLINK vs SAIGE from the data
+      };
       const res = await checkFiles({
         selected_files: files,
-        output_parent_id: dest || undefined,
+        output_parent_id: dest,
         user_params: params,
         user_prompt: notes.trim() || undefined,
       });
-      if (folderIssue) {
-        // A bad results destination is blocking — surface it and don't allow run.
-        res.issues = [{
-          severity: 'error', category: 'inputs', code: folderIssue.code,
-          message: folderIssue.message,
-          suggestion: 'Pick a Synapse folder or project you can edit.',
-        }, ...res.issues];
-        res.status = 'blocked';
-        res.resolved_context = null;
-      }
       setResult(res);
     } catch (err) {
-      const base = err instanceof Error ? err.message : 'File check failed.';
-      setError(folderIssue ? `${folderIssue.message} (Also: ${base})` : base);
+      setError(err instanceof Error ? err.message : 'Check failed.');
     } finally {
       setChecking(false);
     }
