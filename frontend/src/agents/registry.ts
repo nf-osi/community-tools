@@ -1,6 +1,6 @@
 // Agent gallery registry. Add a new agent by appending an entry here.
 import type { LucideIcon } from 'lucide-react';
-import { Dna, FileSearch, ClipboardCheck, BarChart3, Microscope } from 'lucide-react';
+import { Dna, FileSearch, Tags, BarChart3, Microscope } from 'lucide-react';
 
 export type AgentStatus = 'available' | 'coming_soon';
 
@@ -36,11 +36,11 @@ export const AGENTS: AgentMeta[] = [
     status: 'coming_soon',
   },
   {
-    id: 'metadata-qc',
-    name: 'Metadata QC',
-    blurb: 'Check a Synapse folder against the NF-OSI data model and suggest annotation fixes.',
-    tags: ['Curation', 'Annotations'],
-    icon: ClipboardCheck,
+    id: 'metadata-assist',
+    name: 'Metadata Assist',
+    blurb: 'Auto-annotate Synapse files to NF-OSI standards by extracting metadata from protocols and manuscripts you upload alongside the data.',
+    tags: ['Curation', 'Annotations', 'Extraction'],
+    icon: Tags,
     accent: '#c4720c',
     status: 'coming_soon',
   },
