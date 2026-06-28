@@ -6,9 +6,7 @@ import FileCheckPanel from './components/FileCheckPanel';
 import ToolsPanel from './components/ToolsPanel';
 import ToolsModal from './components/ToolsModal';
 import { checkFiles, fetchSession, submitJob } from './api';
-import { ENGINE_TOOLS } from './tools';
 import type {
-  Engine,
   FileCheckResult,
   SessionUser,
   SubmitResult,
@@ -25,7 +23,6 @@ export default function GwasAgentApp() {
   const [outputParent, setOutputParent] = useState('');
   const [traitType, setTraitType] = useState<TraitType>('binary');
   const [phenoName, setPhenoName] = useState('PHENO1');
-  const [engine, setEngine] = useState<Engine>('plink');
   const [notes, setNotes] = useState('');
   const [showToolsModal, setShowToolsModal] = useState(false);
 
@@ -51,7 +48,7 @@ export default function GwasAgentApp() {
     const params: UserParams = {
       trait_type: traitType,
       pheno_name: phenoName || undefined,
-      engine,
+      engine: 'auto', // the analysis job picks PLINK vs SAIGE from the data
     };
     try {
       const res = await checkFiles({
@@ -147,22 +144,6 @@ export default function GwasAgentApp() {
           <h2 className="font-display font-semibold text-[15px] mb-3" style={{ color: '#16181c' }}>
             2 · Analysis settings
           </h2>
-
-          <label className="block mb-4">
-            <span className="text-[12px] uppercase tracking-[0.06em]" style={{ color: '#8a8f98' }}>Association engine</span>
-            <select
-              value={engine}
-              onChange={(e) => setEngine(e.target.value as Engine)}
-              className="mt-1 w-full sm:w-96 rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: '#cfd0c9', color: '#16181c' }}
-            >
-              <option value="plink">PLINK 2 (--glm) — fast; unrelated, balanced</option>
-              <option value="saige">SAIGE — mixed model; imbalanced / related</option>
-            </select>
-            <span className="block mt-1 text-[12px]" style={{ color: '#8a8f98' }}>
-              {ENGINE_TOOLS.find((t) => t.engine === engine)?.goodFor}
-            </span>
-          </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <label className="block">
@@ -295,14 +276,15 @@ export default function GwasAgentApp() {
           </div>
           <p className="text-sm mb-3" style={{ color: '#8a8f98' }}>
             The agent runs these tools on your data in our cloud environment — here's each
-            one, why it was chosen, and what it's good for. The selected association engine
-            is highlighted.
+            one, why it was chosen, and what it's good for. It picks the association engine
+            (PLINK 2 vs SAIGE) automatically from your data — relatedness, case/control
+            balance, and sample size.
           </p>
-          <ToolsPanel engine={engine} />
+          <ToolsPanel />
         </section>
       </main>
 
-      {showToolsModal && <ToolsModal engine={engine} onClose={() => setShowToolsModal(false)} />}
+      {showToolsModal && <ToolsModal onClose={() => setShowToolsModal(false)} />}
     </div>
   );
 }

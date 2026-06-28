@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { X, ExternalLink, ArrowRight } from 'lucide-react';
 import { GWAS_TOOLS, POST_GWAS_STEPS } from '../tools';
-import type { Engine } from '../types';
 
 const CATEGORY_COLOR: Record<string, string> = {
   'QC & structure': '#125e81',
@@ -10,7 +9,7 @@ const CATEGORY_COLOR: Record<string, string> = {
   'Interpretation': '#c4720c',
 };
 
-export default function ToolsModal({ engine, onClose }: { engine: Engine; onClose: () => void }) {
+export default function ToolsModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
     document.addEventListener('keydown', onKey);
@@ -43,40 +42,41 @@ export default function ToolsModal({ engine, onClose }: { engine: Engine; onClos
         <div className="p-6 space-y-6">
           {/* Pipeline tools */}
           <section>
-            <h3 className="font-display font-semibold text-[13px] uppercase tracking-[0.08em] mb-3" style={{ color: '#8a8f98' }}>
+            <h3 className="font-display font-semibold text-[13px] uppercase tracking-[0.08em] mb-1" style={{ color: '#8a8f98' }}>
               Tools the agent runs
             </h3>
+            <p className="text-[13px] mb-3" style={{ color: '#54585f' }}>
+              The two association engines are marked <span style={{ color: '#0d6e62' }}>agent-selected</span> — the
+              agent picks one automatically based on case/control balance, sample relatedness, and sample size.
+            </p>
             <div className="space-y-4">
-              {GWAS_TOOLS.map((t) => {
-                const inactive = !!t.engine && t.engine !== engine;
-                return (
-                  <div key={t.name} className="rounded-lg border p-4" style={{ borderColor: '#e2e2dc', opacity: inactive ? 0.55 : 1 }}>
-                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                      <span className="font-display font-semibold text-[14px]" style={{ color: '#16181c' }}>{t.name}</span>
-                      <span
-                        className="font-display text-[10px] uppercase tracking-[0.06em] px-2 py-0.5 rounded"
-                        style={{ background: `${CATEGORY_COLOR[t.category]}14`, color: CATEGORY_COLOR[t.category] }}
-                      >
-                        {t.category}
+              {GWAS_TOOLS.map((t) => (
+                <div key={t.name} className="rounded-lg border p-4" style={{ borderColor: '#e2e2dc' }}>
+                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                    <span className="font-display font-semibold text-[14px]" style={{ color: '#16181c' }}>{t.name}</span>
+                    <span
+                      className="font-display text-[10px] uppercase tracking-[0.06em] px-2 py-0.5 rounded"
+                      style={{ background: `${CATEGORY_COLOR[t.category]}14`, color: CATEGORY_COLOR[t.category] }}
+                    >
+                      {t.category}
+                    </span>
+                    {t.engine && (
+                      <span className="font-display text-[10px] uppercase tracking-[0.06em] px-2 py-0.5 rounded" style={{ background: '#0d6e6214', color: '#0d6e62' }}>
+                        agent-selected
                       </span>
-                      {t.engine === engine && (
-                        <span className="font-display text-[10px] uppercase tracking-[0.06em] px-2 py-0.5 rounded" style={{ background: '#0d6e62', color: '#fff' }}>
-                          Selected
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[13px] mb-2" style={{ color: '#16181c' }}>{t.details}</p>
-                    <p className="text-[13px]" style={{ color: '#54585f' }}>
-                      <span className="font-medium" style={{ color: '#16181c' }}>Good for: </span>{t.goodFor}
-                    </p>
-                    {t.link && (
-                      <a href={t.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[13px] mt-2 hover:underline" style={{ color: '#125e81' }}>
-                        Documentation <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
                     )}
                   </div>
-                );
-              })}
+                  <p className="text-[13px] mb-2" style={{ color: '#16181c' }}>{t.details}</p>
+                  <p className="text-[13px]" style={{ color: '#54585f' }}>
+                    <span className="font-medium" style={{ color: '#16181c' }}>Good for: </span>{t.goodFor}
+                  </p>
+                  {t.link && (
+                    <a href={t.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[13px] mt-2 hover:underline" style={{ color: '#125e81' }}>
+                      Documentation <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              ))}
             </div>
           </section>
 

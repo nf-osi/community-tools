@@ -14,12 +14,14 @@ export interface SynapseFileSelection {
 export type TraitType = 'binary' | 'quantitative';
 
 export type Engine = 'plink' | 'saige';
+/** What the user/agent requests; the job auto-selects a concrete Engine when 'auto'. */
+export type EngineChoice = 'auto' | Engine;
 
 export interface UserParams {
   trait_type?: TraitType;
   pheno_name?: string;
   pheno_coding_01?: boolean;
-  engine?: Engine;
+  engine?: EngineChoice;
 }
 
 // ---- file-check agent verdict (mirrors file-check.schema.json) ----

@@ -12,8 +12,10 @@ community-tools app. It reuses the existing Synapse OAuth session and the
 
 1. **Select files** — user adds Synapse file ids; `resolveEntity` fetches name /
    contentType / preview so the agent has metadata to reason over.
-2. **Settings** — association engine (PLINK 2 `--glm` or SAIGE mixed model),
-   trait type, phenotype column, results folder, and free-text notes. A
+2. **Settings** — trait type, phenotype column, results folder, and free-text
+   notes. The association engine is NOT a user choice: `params.engine` is sent
+   as `"auto"` and the analysis job picks PLINK 2 `--glm` vs SAIGE at runtime
+   from the data (relatedness, case/control balance, sample size). A
    `ToolsPanel` (driven by `tools.ts`) explains every tool the agent runs —
    what it is, why it was chosen, what it's good for — and highlights the
    selected engine. A `ToolsModal` adds in-depth details plus post-GWAS
