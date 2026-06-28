@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus } from 'lucide-react';
 import { Link } from '../router';
 import { AGENTS } from './registry';
 import type { AgentMeta } from './registry';
@@ -74,6 +74,29 @@ function AgentCard({ agent }: { agent: AgentMeta }) {
   return <div aria-disabled="true">{inner}</div>;
 }
 
+function SubmitAgentCard() {
+  return (
+    <Link
+      to="/roadmap?new=agent"
+      className="group h-full min-h-[200px] rounded-2xl border-2 border-dashed p-6 flex flex-col items-center justify-center text-center transition-colors hover:border-[#0d6e62] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+      style={{ borderColor: '#cfd0c9' }}
+    >
+      <div
+        className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 transition-colors"
+        style={{ background: '#0d6e6214' }}
+      >
+        <Plus className="w-5 h-5 transition-transform group-hover:scale-110" style={{ color: '#0d6e62' }} />
+      </div>
+      <h3 className="font-display font-semibold text-[16px] mb-1" style={{ color: '#16181c' }}>
+        Submit a new agent
+      </h3>
+      <p className="text-sm leading-relaxed" style={{ color: '#54585f' }}>
+        Have an idea for an agent? Propose it on the community roadmap.
+      </p>
+    </Link>
+  );
+}
+
 export default function AgentGallery() {
   useEffect(() => { document.title = 'Agent Gallery · NF Data Portal'; }, []);
 
@@ -106,6 +129,7 @@ export default function AgentGallery() {
           {AGENTS.map((a) => (
             <AgentCard key={a.id} agent={a} />
           ))}
+          <SubmitAgentCard />
         </div>
       </main>
     </div>
