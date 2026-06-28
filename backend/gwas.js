@@ -123,6 +123,52 @@ router.get('/entity/:synId', requireLogin, async (req, res) => {
   }
 });
 
+// ── POST /api/gwas/check-folder ──────────────────────────────────────────────
+// Deterministic: does the results destination exist, is it a container, and can
+// we write to it? Checked with the service token — the same account that the job
+// uses to write results — so this matches what will happen at run time.
+async function checkOutputWritable(parentId) {
+  const headers = synapseHeaders();
+  let entity;
+  try {
+    entity = (await axios.get(`${SYNAPSE_BASE}/entity/${parentId}`, { headers })).data;
+  } catch (_) {
+    return { ok: false, code: 'output_not_found',
+             message: `Results folder ${parentId} does not exist or is not accessible.` };
+  }
+  const ct = entity.concreteType || '';
+  if (!/(Folder|Project)$/.test(ct)) {
+    return { ok: false, code: 'output_not_container',
+             message: `${parentId} is a ${ct.split('.').pop() || 'non-container'}, not a Folder or Project.` };
+  }
+  let perms;
+  try {
+    perms = (await axios.get(`${SYNAPSE_BASE}/entity/${parentId}/permissions`, { headers })).data;
+  } catch (_) {
+    return { ok: false, code: 'output_perms_error',
+             message: `Could not read permissions for ${parentId}.` };
+  }
+  if (!(perms.canAddChild && perms.canUpload)) {
+    return { ok: false, code: 'output_not_writable',
+             message: `No edit access to ${parentId} — results need create + upload permission.` };
+  }
+  return { ok: true, code: 'ok', message: `${entity.name || parentId} is writable.` };
+}
+
+router.post('/check-folder', requireLogin, async (req, res) => {
+  const { output_parent_id } = req.body || {};
+  if (!output_parent_id || !/^syn\d+$/i.test(output_parent_id)) {
+    return res.status(400).json({ ok: false, code: 'output_invalid',
+      message: 'Provide a valid Synapse id (syn…) for the results folder.' });
+  }
+  try {
+    res.json(await checkOutputWritable(output_parent_id));
+  } catch (err) {
+    console.error('POST /api/gwas/check-folder error:', err.response?.data || err.message);
+    res.status(500).json({ ok: false, code: 'output_check_error', message: err.message });
+  }
+});
+
 // ── POST /api/gwas/check-files ───────────────────────────────────────────────
 const FILE_CHECK_SYSTEM_PROMPT = `You are the request-validation agent for a GWAS (genome-wide association study) analysis app built on the Neurofibromatosis (NF) Data Portal (Synapse). BEFORE a job is submitted, you check whether it should run. You do not run the analysis.
 

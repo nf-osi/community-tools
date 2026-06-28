@@ -44,6 +44,19 @@ export const fetchSession = (): Promise<{ user: SessionUser | null }> =>
 export const resolveEntity = (synId: string): Promise<SynapseFileSelection> =>
   request<SynapseFileSelection>(`/gwas/entity/${encodeURIComponent(synId)}`);
 
+export interface FolderCheck {
+  ok: boolean;
+  code: string;
+  message: string;
+}
+
+/** Deterministic check that the results folder exists and is writable. */
+export const checkFolder = (output_parent_id: string): Promise<FolderCheck> =>
+  request<FolderCheck>('/gwas/check-folder', {
+    method: 'POST',
+    body: JSON.stringify({ output_parent_id }),
+  });
+
 /** Run the pre-flight file-check agent over the current selection. */
 export const checkFiles = (payload: {
   selected_files: SynapseFileSelection[];

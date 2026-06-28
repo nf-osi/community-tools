@@ -5,7 +5,7 @@ import FileSelector from './components/FileSelector';
 import FileCheckPanel from './components/FileCheckPanel';
 import ToolsPanel from './components/ToolsPanel';
 import ToolsModal from './components/ToolsModal';
-import { checkFiles, fetchSession, submitJob } from './api';
+import { checkFiles, checkFolder, fetchSession, submitJob } from './api';
 import type {
   FileCheckResult,
   SessionUser,
@@ -50,16 +50,43 @@ export default function GwasAgentApp() {
       pheno_name: phenoName || undefined,
       engine: 'auto', // the analysis job picks PLINK vs SAIGE from the data
     };
+    const dest = outputParent.trim();
+
+    // 1. Deterministic results-folder check (exists + writable) — first.
+    let folderIssue: { code: string; message: string } | null = null;
+    try {
+      if (!dest) {
+        folderIssue = { code: 'output_missing', message: 'Enter a results folder (Synapse id) you can write to.' };
+      } else {
+        const fr = await checkFolder(dest);
+        if (!fr.ok) folderIssue = { code: fr.code, message: fr.message };
+      }
+    } catch (err) {
+      folderIssue = { code: 'output_check_failed', message: err instanceof Error ? err.message : 'Results folder check failed.' };
+    }
+
+    // 2. File-check agent.
     try {
       const res = await checkFiles({
         selected_files: files,
-        output_parent_id: outputParent.trim() || undefined,
+        output_parent_id: dest || undefined,
         user_params: params,
         user_prompt: notes.trim() || undefined,
       });
+      if (folderIssue) {
+        // A bad results destination is blocking — surface it and don't allow run.
+        res.issues = [{
+          severity: 'error', category: 'inputs', code: folderIssue.code,
+          message: folderIssue.message,
+          suggestion: 'Pick a Synapse folder or project you can edit.',
+        }, ...res.issues];
+        res.status = 'blocked';
+        res.resolved_context = null;
+      }
       setResult(res);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'File check failed.');
+      const base = err instanceof Error ? err.message : 'File check failed.';
+      setError(folderIssue ? `${folderIssue.message} (Also: ${base})` : base);
     } finally {
       setChecking(false);
     }
@@ -210,7 +237,7 @@ export default function GwasAgentApp() {
             style={{ background: '#16181c', color: '#f6f6f3' }}
           >
             {checking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            {checking ? 'Checking files…' : 'Check my files'}
+            {checking ? 'Checking…' : 'Check my files and folders'}
           </button>
 
           {error && (
