@@ -21,6 +21,7 @@ export default function GwasAgentApp() {
   const [outputParent, setOutputParent] = useState('');
   const [traitType, setTraitType] = useState<TraitType>('binary');
   const [phenoName, setPhenoName] = useState('PHENO1');
+  const [notes, setNotes] = useState('');
 
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<FileCheckResult | null>(null);
@@ -47,6 +48,7 @@ export default function GwasAgentApp() {
         selected_files: files,
         output_parent_id: outputParent.trim() || undefined,
         user_params: params,
+        user_prompt: notes.trim() || undefined,
       });
       setResult(res);
     } catch (err) {
@@ -60,8 +62,17 @@ export default function GwasAgentApp() {
     if (!result?.resolved_context) return;
     setSubmitting(true);
     setError(null);
+    // Always carry the user's prompt into the job context, even if the
+    // file-check agent didn't echo it into params.
+    const trimmed = notes.trim();
+    const context = trimmed
+      ? {
+          ...result.resolved_context,
+          params: { ...(result.resolved_context.params ?? {}), user_prompt: trimmed },
+        }
+      : result.resolved_context;
     try {
-      const res = await submitJob(result.resolved_context);
+      const res = await submitJob(context);
       setSubmitted(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Submission failed.');
@@ -160,6 +171,23 @@ export default function GwasAgentApp() {
               />
             </label>
           </div>
+
+          <label className="block mt-4">
+            <span className="text-[12px] uppercase tracking-[0.06em]" style={{ color: '#8a8f98' }}>
+              Notes &amp; preferences <span className="normal-case tracking-normal">(optional)</span>
+            </span>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Anything the agent should know — e.g. analysis preferences (covariates to prioritize, MAF/QC thresholds, subset to specific chromosomes) or output preferences (extra plots, summary style)."
+              className="mt-1 w-full rounded-lg border px-3 py-2 text-sm resize-y"
+              style={{ borderColor: '#cfd0c9', color: '#16181c' }}
+            />
+            <span className="block mt-1 text-[12px]" style={{ color: '#8a8f98' }}>
+              Free text. Used by the pre-flight check and passed to the analysis job.
+            </span>
+          </label>
         </section>
 
         {/* Check */}

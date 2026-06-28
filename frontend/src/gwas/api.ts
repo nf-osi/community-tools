@@ -49,6 +49,7 @@ export const checkFiles = (payload: {
   selected_files: SynapseFileSelection[];
   output_parent_id?: string;
   user_params?: UserParams;
+  user_prompt?: string;
 }): Promise<FileCheckResult> =>
   request<FileCheckResult>('/gwas/check-files', {
     method: 'POST',
