@@ -4,6 +4,7 @@ import { Link } from '../router';
 import FileSelector from './components/FileSelector';
 import FileCheckPanel from './components/FileCheckPanel';
 import ToolsPanel from './components/ToolsPanel';
+import ToolsModal from './components/ToolsModal';
 import { checkFiles, fetchSession, submitJob } from './api';
 import { ENGINE_TOOLS } from './tools';
 import type {
@@ -26,6 +27,7 @@ export default function GwasAgentApp() {
   const [phenoName, setPhenoName] = useState('PHENO1');
   const [engine, setEngine] = useState<Engine>('plink');
   const [notes, setNotes] = useState('');
+  const [showToolsModal, setShowToolsModal] = useState(false);
 
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<FileCheckResult | null>(null);
@@ -279,9 +281,18 @@ export default function GwasAgentApp() {
 
         {/* Tools */}
         <section>
-          <h2 className="font-display font-semibold text-[15px] mb-1" style={{ color: '#16181c' }}>
-            Tools in this pipeline
-          </h2>
+          <div className="flex items-start justify-between gap-4 mb-1">
+            <h2 className="font-display font-semibold text-[15px]" style={{ color: '#16181c' }}>
+              Tools in this pipeline
+            </h2>
+            <button
+              onClick={() => setShowToolsModal(true)}
+              className="font-display font-medium text-sm whitespace-nowrap hover:underline"
+              style={{ color: '#125e81' }}
+            >
+              In-depth details &amp; post-GWAS next steps →
+            </button>
+          </div>
           <p className="text-sm mb-3" style={{ color: '#8a8f98' }}>
             What runs on your data, why each tool was chosen, and what it's good for.
             The selected association engine is highlighted.
@@ -289,6 +300,8 @@ export default function GwasAgentApp() {
           <ToolsPanel engine={engine} />
         </section>
       </main>
+
+      {showToolsModal && <ToolsModal engine={engine} onClose={() => setShowToolsModal(false)} />}
     </div>
   );
 }
