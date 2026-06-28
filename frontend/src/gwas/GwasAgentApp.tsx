@@ -3,7 +3,6 @@ import { Loader2, Play, Search, Dna, ArrowLeft } from 'lucide-react';
 import { Link } from '../router';
 import FileSelector from './components/FileSelector';
 import FileCheckPanel from './components/FileCheckPanel';
-import ToolsPanel from './components/ToolsPanel';
 import ToolsModal from './components/ToolsModal';
 import { checkFiles, checkFolder, fetchSession, submitJob } from './api';
 import type {
@@ -305,13 +304,12 @@ export default function GwasAgentApp() {
               In-depth details &amp; post-GWAS next steps →
             </button>
           </div>
-          <p className="text-sm mb-3" style={{ color: '#8a8f98' }}>
-            The agent runs these tools on your data in our cloud environment — here's each
-            one, why it was chosen, and what it's good for. It picks the association engine
-            (PLINK 2 vs SAIGE) automatically from your data — relatedness, case/control
-            balance, and sample size.
+          <p className="text-sm" style={{ color: '#8a8f98' }}>
+            The agent runs a small set of vetted tools (QC/PCA, association, plotting,
+            interpretation) in our cloud, and picks the association engine (PLINK 2 vs
+            SAIGE) automatically from your data. See the details link for what each tool
+            is, why it was chosen, and the post-GWAS steps it doesn't cover.
           </p>
-          <ToolsPanel />
         </section>
       </main>
 

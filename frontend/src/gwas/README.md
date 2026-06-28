@@ -15,11 +15,11 @@ community-tools app. It reuses the existing Synapse OAuth session and the
 2. **Settings** — trait type, phenotype column, results folder, and free-text
    notes. The association engine is NOT a user choice: `params.engine` is sent
    as `"auto"` and the analysis job picks PLINK 2 `--glm` vs SAIGE at runtime
-   from the data (relatedness, case/control balance, sample size). A
-   `ToolsPanel` (driven by `tools.ts`) explains every tool the agent runs —
-   what it is, why it was chosen, what it's good for — and highlights the
-   selected engine. A `ToolsModal` adds in-depth details plus post-GWAS
-   interpretation steps the agent doesn't orchestrate yet.
+   from the data (relatedness, case/control balance, sample size). The page
+   shows a one-line summary; a `ToolsModal` (driven by `tools.ts`, opened from
+   the "In-depth details" link) explains every tool — what it is, why it was
+   chosen, what it's good for — plus the post-GWAS steps the agent doesn't
+   orchestrate yet.
 3. **Pre-flight check** — `checkFiles` runs the file-check agent (the prompt in
    `hackathon/frontend/file-check-agent.md` + `file-check.schema.json`) and the
    verdict renders in `FileCheckPanel` (role mapping, issues, questions).
