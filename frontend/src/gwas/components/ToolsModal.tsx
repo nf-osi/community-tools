@@ -32,8 +32,7 @@ export default function ToolsModal({ engine, onClose }: { engine: Engine; onClos
               Tools &amp; post-GWAS next steps
             </h2>
             <p className="text-sm mt-0.5" style={{ color: '#8a8f98' }}>
-              The tools the agent runs in our cloud and why — plus interpretation steps it
-              doesn't orchestrate yet.
+              The tools the agent runs in our cloud, and why.
             </p>
           </div>
           <button onClick={onClose} aria-label="Close" className="p-1.5 rounded hover:bg-gray-100" style={{ color: '#8a8f98' }}>
