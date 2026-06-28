@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { loginUrl } from '../loginUrl';
 
 interface Props {
   onClose: () => void;
 }
-
-const SYNAPSE_LOGIN_URL = `${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`;
 
 export default function LoginPrompt({ onClose }: Props) {
   useEffect(() => {
@@ -41,7 +40,7 @@ export default function LoginPrompt({ onClose }: Props) {
         </div>
 
         <a
-          href={SYNAPSE_LOGIN_URL}
+          href={loginUrl()}
           className="flex items-center justify-center w-full px-4 py-2.5 bg-brand-900 text-white text-sm font-semibold rounded hover:bg-brand-800 transition-colors shadow-sm"
         >
           Sign in with Synapse

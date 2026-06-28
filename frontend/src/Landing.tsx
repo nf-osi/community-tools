@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { Map, Sparkles, ArrowRight } from 'lucide-react';
 import { Link } from './router';
 import { fetchSession, logout } from './api';
+import { loginUrl } from './loginUrl';
 import type { User } from './types';
-
-const LOGIN_URL = `${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`;
 
 function PortalLogo() {
   return (
@@ -72,7 +71,7 @@ function AuthControl({ user, onLogout }: { user: User | null; onLogout: () => vo
   }
   return (
     <a
-      href={LOGIN_URL}
+      href={loginUrl()}
       className="font-display font-medium text-sm px-[22px] py-[11px] rounded-full transition-colors"
       style={{ background: '#16181c', color: '#f6f6f3' }}
       onMouseEnter={(e) => (e.currentTarget.style.background = '#1b7eab')}

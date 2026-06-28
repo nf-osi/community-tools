@@ -15,7 +15,7 @@ import type {
   UserParams,
 } from './types';
 
-const LOGIN_URL = `${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`;
+import { loginUrl } from '../loginUrl';
 
 export default function GwasAgentApp() {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -152,7 +152,7 @@ export default function GwasAgentApp() {
               <span className="text-sm font-medium" style={{ color: '#54585f' }}>{user!.username}</span>
             ) : (
               <a
-                href={LOGIN_URL}
+                href={loginUrl()}
                 className="font-display font-medium text-sm px-[22px] py-[11px] rounded-full"
                 style={{ background: '#16181c', color: '#f6f6f3' }}
               >
@@ -261,7 +261,7 @@ export default function GwasAgentApp() {
             </h2>
             {!isLoggedIn ? (
               <p className="text-sm" style={{ color: '#54585f' }}>
-                <a href={LOGIN_URL} className="underline" style={{ color: '#125e81' }}>Log in with Synapse</a> to run the analysis on your files.
+                <a href={loginUrl()} className="underline" style={{ color: '#125e81' }}>Log in with Synapse</a> to run the analysis on your files.
               </p>
             ) : submitted ? (
               <div className="rounded-xl border p-5" style={{ borderColor: '#cfe6d8', background: '#e1f1e8' }}>

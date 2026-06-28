@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, Loader2, Lightbulb, ArrowLeft, ExternalLink } from 'lucide-react';
 import { Link } from './router';
+import { loginUrl } from './loginUrl';
 import { fetchIdeas, createIdea, voteForIdea, fetchSession, logout } from './api';
 import type { Idea, IdeaFormData, Status, FocusArea, User } from './types';
 import FacetFilters from './components/FacetFilters';
@@ -289,7 +290,7 @@ export default function App() {
             </>
           ) : (
             <a
-              href={`${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`}
+              href={loginUrl()}
               className="font-display font-medium text-sm px-[22px] py-[11px] rounded-full transition-colors"
               style={{ background: '#16181c', color: '#f6f6f3' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}

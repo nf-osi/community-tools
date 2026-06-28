@@ -18,6 +18,24 @@ const POST_LOGIN_URL = process.env.POST_LOGIN_URL || '/';
 const DEV_AUTH_BYPASS =
   process.env.DEV_AUTH_BYPASS === 'true' && process.env.NODE_ENV !== 'production';
 
+// Post-login destination. A `return` query param (the relative path the user
+// started from) is honored when it's a safe same-site path; else POST_LOGIN_URL.
+function sanitizeReturnPath(p) {
+  if (typeof p !== 'string') return null;
+  if (!p.startsWith('/') || p.startsWith('//')) return null; // same-site paths only
+  if (p.includes('://')) return null;                         // no open redirect
+  return p.length <= 512 ? p : null;
+}
+function buildPostLogin(returnPath) {
+  if (!returnPath) return POST_LOGIN_URL;
+  // In two-server dev POST_LOGIN_URL is a full origin (the Vite host); join it
+  // with the return path. In production it's '/' (same origin) — use the path.
+  if (/^https?:\/\//i.test(POST_LOGIN_URL)) {
+    return POST_LOGIN_URL.replace(/\/+$/, '') + returnPath;
+  }
+  return returnPath;
+}
+
 function getRedirectUri(req) {
   if (REDIRECT_URI_ENV) return REDIRECT_URI_ENV;
   const proto = req.headers['x-forwarded-proto'] || req.protocol;
@@ -92,6 +110,8 @@ function buildAnnotations(id, etag, data) {
 
 // GET /api/auth/login — redirect to Synapse authorization endpoint
 app.get('/api/auth/login', async (req, res) => {
+  // Where to return after login (the page the user started from).
+  const returnTo = sanitizeReturnPath(req.query.return);
   // Dev bypass: establish a session from the service token's Synapse profile.
   if (DEV_AUTH_BYPASS) {
     try {
@@ -103,7 +123,7 @@ app.get('/api/auth/login', async (req, res) => {
       // service token (we're acting as the service account in dev).
       req.session.synapseAccessToken = getAuthToken();
       console.log('[auth/login] DEV_AUTH_BYPASS — signed in as', req.session.user);
-      return res.redirect(POST_LOGIN_URL);
+      return res.redirect(buildPostLogin(returnTo));
     } catch (err) {
       console.error('[auth/login] dev bypass failed:', err.response?.data || err.message);
       return res.redirect(`${POST_LOGIN_URL}?auth_error=dev_bypass_failed`);
@@ -113,7 +133,8 @@ app.get('/api/auth/login', async (req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
   const nonce = crypto.randomBytes(16).toString('hex');
   req.session.oauthState = state;
-  console.log('[auth/login] state:', state);
+  if (returnTo) req.session.returnTo = returnTo;  // survive the OAuth round-trip
+  console.log('[auth/login] state:', state, '| returnTo:', returnTo || '(default)');
   const claims = JSON.stringify({
     userinfo: {
       userid: null,
@@ -188,9 +209,11 @@ app.get('/oauth/callback', async (req, res) => {
     // token rides in the (httpOnly, prod-secure) cookie; for production, move it
     // to an encrypted/server-side session store.
     req.session.synapseAccessToken = access_token;
-    console.log('[oauth/callback] session saved, redirecting to', POST_LOGIN_URL);
+    const dest = buildPostLogin(sanitizeReturnPath(req.session.returnTo));
+    delete req.session.returnTo;
+    console.log('[oauth/callback] session saved, redirecting to', dest);
 
-    res.redirect(POST_LOGIN_URL);
+    res.redirect(dest);
   } catch (err) {
     console.error('[oauth/callback] token exchange error:', err.response?.data || err.message);
     res.redirect(`${POST_LOGIN_URL}?auth_error=token_exchange_failed`);
