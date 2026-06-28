@@ -1,4 +1,4 @@
-import { AlertCircle, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import { SEVERITY_META, APPROPRIATENESS_META } from '../types';
 import type { FileCheckResult, GwasRole, IssueSeverity } from '../types';
@@ -24,12 +24,7 @@ export default function FileCheckPanel({ result }: { result: FileCheckResult }) 
   return (
     <div className="rounded-xl border p-5" style={{ borderColor: '#e2e2dc', background: '#fff' }}>
       <div className="flex items-start justify-between gap-4 mb-3">
-        <div className="flex items-center gap-2">
-          {result.status === 'ready' && (
-            <CheckCircle2 className="w-5 h-5" style={{ color: '#1d7a4f' }} />
-          )}
-          <p className="text-sm" style={{ color: '#16181c' }}>{result.summary}</p>
-        </div>
+        <p className="text-sm" style={{ color: '#16181c' }}>{result.summary}</p>
         <StatusBadge status={result.status} />
       </div>
 
