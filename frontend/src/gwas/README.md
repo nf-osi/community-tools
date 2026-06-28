@@ -12,7 +12,11 @@ community-tools app. It reuses the existing Synapse OAuth session and the
 
 1. **Select files** — user adds Synapse file ids; `resolveEntity` fetches name /
    contentType / preview so the agent has metadata to reason over.
-2. **Settings** — trait type, phenotype column, results folder.
+2. **Settings** — association engine (PLINK 2 `--glm` or SAIGE mixed model),
+   trait type, phenotype column, results folder, and free-text notes. A
+   `ToolsPanel` (driven by `tools.ts`) explains every tool in the pipeline —
+   what it is, why it was chosen, what it's good for — and highlights the
+   selected engine.
 3. **Pre-flight check** — `checkFiles` runs the file-check agent (the prompt in
    `hackathon/frontend/file-check-agent.md` + `file-check.schema.json`) and the
    verdict renders in `FileCheckPanel` (role mapping, issues, questions).

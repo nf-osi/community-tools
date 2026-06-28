@@ -13,10 +13,13 @@ export interface SynapseFileSelection {
 
 export type TraitType = 'binary' | 'quantitative';
 
+export type Engine = 'plink' | 'saige';
+
 export interface UserParams {
   trait_type?: TraitType;
   pheno_name?: string;
   pheno_coding_01?: boolean;
+  engine?: Engine;
 }
 
 // ---- file-check agent verdict (mirrors file-check.schema.json) ----

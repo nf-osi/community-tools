@@ -3,8 +3,11 @@ import { Loader2, Play, Search, Dna, ArrowLeft } from 'lucide-react';
 import { Link } from '../router';
 import FileSelector from './components/FileSelector';
 import FileCheckPanel from './components/FileCheckPanel';
+import ToolsPanel from './components/ToolsPanel';
 import { checkFiles, fetchSession, submitJob } from './api';
+import { ENGINE_TOOLS } from './tools';
 import type {
+  Engine,
   FileCheckResult,
   SessionUser,
   SubmitResult,
@@ -21,6 +24,7 @@ export default function GwasAgentApp() {
   const [outputParent, setOutputParent] = useState('');
   const [traitType, setTraitType] = useState<TraitType>('binary');
   const [phenoName, setPhenoName] = useState('PHENO1');
+  const [engine, setEngine] = useState<Engine>('plink');
   const [notes, setNotes] = useState('');
 
   const [checking, setChecking] = useState(false);
@@ -42,7 +46,11 @@ export default function GwasAgentApp() {
     setError(null);
     setResult(null);
     setSubmitted(null);
-    const params: UserParams = { trait_type: traitType, pheno_name: phenoName || undefined };
+    const params: UserParams = {
+      trait_type: traitType,
+      pheno_name: phenoName || undefined,
+      engine,
+    };
     try {
       const res = await checkFiles({
         selected_files: files,
@@ -137,6 +145,23 @@ export default function GwasAgentApp() {
           <h2 className="font-display font-semibold text-[15px] mb-3" style={{ color: '#16181c' }}>
             2 · Analysis settings
           </h2>
+
+          <label className="block mb-4">
+            <span className="text-[12px] uppercase tracking-[0.06em]" style={{ color: '#8a8f98' }}>Association engine</span>
+            <select
+              value={engine}
+              onChange={(e) => setEngine(e.target.value as Engine)}
+              className="mt-1 w-full sm:w-96 rounded-lg border px-3 py-2 text-sm"
+              style={{ borderColor: '#cfd0c9', color: '#16181c' }}
+            >
+              <option value="plink">PLINK 2 (--glm) — fast; unrelated, balanced</option>
+              <option value="saige">SAIGE — mixed model; imbalanced / related</option>
+            </select>
+            <span className="block mt-1 text-[12px]" style={{ color: '#8a8f98' }}>
+              {ENGINE_TOOLS.find((t) => t.engine === engine)?.goodFor}
+            </span>
+          </label>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <label className="block">
               <span className="text-[12px] uppercase tracking-[0.06em]" style={{ color: '#8a8f98' }}>Trait type</span>
@@ -251,6 +276,18 @@ export default function GwasAgentApp() {
             )}
           </section>
         )}
+
+        {/* Tools */}
+        <section>
+          <h2 className="font-display font-semibold text-[15px] mb-1" style={{ color: '#16181c' }}>
+            Tools in this pipeline
+          </h2>
+          <p className="text-sm mb-3" style={{ color: '#8a8f98' }}>
+            What runs on your data, why each tool was chosen, and what it's good for.
+            The selected association engine is highlighted.
+          </p>
+          <ToolsPanel engine={engine} />
+        </section>
       </main>
     </div>
   );
