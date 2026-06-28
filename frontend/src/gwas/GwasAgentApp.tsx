@@ -268,13 +268,11 @@ export default function GwasAgentApp() {
             ) : submitted ? (
               <div className="rounded-xl border p-5" style={{ borderColor: '#cfe6d8', background: '#e1f1e8' }}>
                 <p className="text-sm font-medium" style={{ color: '#1d7a4f' }}>
-                  {submitted.dryRun ? 'Submission accepted (dev dry-run)' : 'Job submitted'} — id{' '}
-                  <span className="font-mono">{submitted.job_id}</span>.
+                  Job submitted — id <span className="font-mono">{submitted.job_id}</span>.
                 </p>
                 <p className="text-[13px] mt-1" style={{ color: '#54585f' }}>
-                  {submitted.dryRun
-                    ? 'Dev dry-run: the request was validated but no job was launched and no results will be produced.'
-                    : 'Results will appear in your chosen Synapse folder when the run completes.'}
+                  Results will appear in your chosen Synapse folder when the run completes —
+                  you'll get an email notification when they're uploaded.
                 </p>
               </div>
             ) : (
