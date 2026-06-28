@@ -113,7 +113,7 @@ export const STATUS_META: Record<
   CheckStatus,
   { label: string; color: string; bg: string }
 > = {
-  ready:       { label: 'Ready to run',   color: '#1d7a4f', bg: '#e1f1e8' },
+  ready:       { label: 'Ready',          color: '#1d7a4f', bg: '#e1f1e8' },
   needs_input: { label: 'Needs input',    color: '#c4720c', bg: '#f6ecdc' },
   blocked:     { label: 'Blocked',        color: '#b0341d', bg: '#f6e2dd' },
 };
