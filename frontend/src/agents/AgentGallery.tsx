@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus, ExternalLink } from 'lucide-react';
 import { Link } from '../router';
 import { AGENTS } from './registry';
 import type { AgentMeta } from './registry';
@@ -104,13 +104,24 @@ export default function AgentGallery() {
     <div className="min-h-screen" style={{ background: '#fafaf7' }}>
       <div className="sticky top-0 z-40 bg-white border-b" style={{ borderColor: '#e2e2dc' }}>
         <header className="max-w-5xl mx-auto px-10 pt-7 pb-5">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm mb-4 hover:underline"
-            style={{ color: '#8a8f98' }}
-          >
-            <ArrowLeft className="w-3.5 h-3.5" /> NF Data Portal
-          </Link>
+          <div className="flex items-center justify-between text-sm mb-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 hover:underline"
+              style={{ color: '#8a8f98' }}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" /> Home
+            </Link>
+            <a
+              href="https://nf.synapse.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 hover:underline"
+              style={{ color: '#8a8f98' }}
+            >
+              NF Data Portal <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+            </a>
+          </div>
           <div className="font-display font-medium text-[15px] uppercase tracking-[0.18em]" style={{ color: '#8a8f98' }}>
             NF Data Portal
           </div>
