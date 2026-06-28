@@ -47,7 +47,7 @@ export const AGENTS: AgentMeta[] = [
   {
     id: 'knowledge-graph',
     name: 'Knowledge & Discourse Graph',
-    blurb: 'Build a knowledge graph of entities and relationships from a file, plus a discourse graph of questions, claims, and evidence — written back to Synapse.',
+    blurb: 'Build a knowledge graph of entities and relationships from a file, plus a discourse graph of questions, claims, and evidence — written back to Synapse or to your personal/lab knowledge graph.',
     tags: ['Knowledge Graph', 'Discourse', 'Extraction'],
     icon: Network,
     accent: '#7b3df0',
