@@ -20,28 +20,47 @@ function humanSize(bytes?: number): string {
 }
 
 export default function FileSelector({ files, onChange }: Props) {
-  const [synId, setSynId] = useState('');
+  const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function addFile() {
-    const id = synId.trim();
+  async function addFiles() {
     setError(null);
-    if (!SYN_ID_RE.test(id)) {
-      setError('Enter a Synapse file id like syn12345678.');
+    // Accept multiple ids separated by space, tab, comma, or newline.
+    const tokens = text.split(/[\s,]+/).map((t) => t.trim()).filter(Boolean);
+    if (tokens.length === 0) {
+      setError('Enter one or more Synapse file ids.');
       return;
     }
-    if (files.some((f) => f.id === id)) {
-      setError('That file is already selected.');
+    const invalid = tokens.filter((t) => !SYN_ID_RE.test(t));
+    if (invalid.length) {
+      const shown = invalid.slice(0, 5).join(', ') + (invalid.length > 5 ? '…' : '');
+      setError(`Not valid Synapse ids (expected syn12345678): ${shown}`);
+      return;
+    }
+    // Normalize + dedupe against the current selection and within the batch.
+    const existing = new Set(files.map((f) => f.id.toLowerCase()));
+    const seen = new Set<string>();
+    const toAdd: string[] = [];
+    for (const t of tokens) {
+      const id = t.toLowerCase();
+      if (existing.has(id) || seen.has(id)) continue;
+      seen.add(id);
+      toAdd.push(id);
+    }
+    if (toAdd.length === 0) {
+      setError('Those files are already selected.');
       return;
     }
     setBusy(true);
     try {
-      // Resolve name / contentType / preview from the backend. If the endpoint
-      // isn't available yet, fall back to a bare reference the user can keep.
-      const resolved = await resolveEntity(id).catch(() => ({ id, name: id }));
-      onChange([...files, resolved]);
-      setSynId('');
+      // Resolve name / contentType / preview per id; fall back to a bare
+      // reference if the backend endpoint isn't available.
+      const resolved = await Promise.all(
+        toAdd.map((id) => resolveEntity(id).catch(() => ({ id, name: id }))),
+      );
+      onChange([...files, ...resolved]);
+      setText('');
     } finally {
       setBusy(false);
     }
@@ -61,26 +80,33 @@ export default function FileSelector({ files, onChange }: Props) {
         a phenotype table, and optionally a covariate table.
       </p>
 
-      <div className="flex gap-2 mb-4">
-        <input
-          value={synId}
-          onChange={(e) => setSynId(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') addFile(); }}
-          placeholder="syn12345678"
-          aria-label="Synapse file id"
-          className="flex-1 rounded-lg border px-3 py-2 text-sm font-mono"
+      <div className="flex gap-2 mb-1 items-start">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            // Cmd/Ctrl+Enter submits; plain Enter inserts a newline.
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addFiles(); }
+          }}
+          rows={2}
+          placeholder="syn12345678  syn23456789, syn34567890&#10;(one or more ids)"
+          aria-label="Synapse file ids"
+          className="flex-1 rounded-lg border px-3 py-2 text-sm font-mono resize-y"
           style={{ borderColor: '#cfd0c9', color: '#16181c' }}
         />
         <button
-          onClick={addFile}
+          onClick={addFiles}
           disabled={busy}
-          className="font-display font-medium text-sm px-4 py-2 rounded-lg flex items-center gap-1.5 disabled:opacity-40"
+          className="font-display font-medium text-sm px-4 py-2 rounded-lg flex items-center gap-1.5 disabled:opacity-40 flex-shrink-0"
           style={{ background: '#16181c', color: '#f6f6f3' }}
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           Add
         </button>
       </div>
+      <p className="text-[12px] mb-4" style={{ color: '#8a8f98' }}>
+        Paste one or more ids separated by space, tab, comma, or newline. ⌘/Ctrl+Enter to add.
+      </p>
       {error && <p className="text-sm mb-3" style={{ color: '#b0341d' }}>{error}</p>}
 
       {files.length === 0 ? (
