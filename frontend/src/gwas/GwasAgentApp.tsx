@@ -74,19 +74,26 @@ export default function GwasAgentApp() {
 
   return (
     <div className="min-h-screen" style={{ background: '#fafaf7' }}>
+      {/* Prominent back-to-gallery control: fixed, vertically centered, left-aligned */}
+      <Link
+        to="/agents"
+        aria-label="Back to Agent Gallery"
+        title="Back to Agent Gallery"
+        className="group fixed left-4 top-1/2 -translate-y-1/2 z-50 flex items-center gap-2 rounded-full border bg-white shadow-md px-3 py-3 2xl:pr-5 transition-colors hover:border-[#0d6e62]"
+        style={{ borderColor: '#e2e2dc' }}
+      >
+        <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" style={{ color: '#0d6e62' }} />
+        <span className="hidden 2xl:inline font-display font-medium text-sm" style={{ color: '#16181c' }}>
+          Agent Gallery
+        </span>
+      </Link>
+
       {/* Masthead — mirrors the roadmap app's header treatment */}
       <div className="sticky top-0 z-40 bg-white border-b" style={{ borderColor: '#e2e2dc' }}>
         <header className="max-w-4xl mx-auto px-10 pt-7 pb-5 flex items-end justify-between">
           <div className="flex items-start gap-5">
             <Dna className="w-10 h-10 mt-1" style={{ color: '#0d6e62' }} aria-hidden="true" />
             <div>
-              <Link
-                to="/agents"
-                className="inline-flex items-center gap-1.5 text-sm mb-1 hover:underline"
-                style={{ color: '#8a8f98' }}
-              >
-                <ArrowLeft className="w-3.5 h-3.5" /> Agent Gallery
-              </Link>
               <div className="font-display font-medium text-[15px] uppercase tracking-[0.18em]" style={{ color: '#8a8f98' }}>
                 NF Data Portal · Agents
               </div>
