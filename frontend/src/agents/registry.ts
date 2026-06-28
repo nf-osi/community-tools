@@ -1,6 +1,6 @@
 // Agent gallery registry. Add a new agent by appending an entry here.
 import type { LucideIcon } from 'lucide-react';
-import { Dna, FileSearch, Tags, BarChart3, Microscope } from 'lucide-react';
+import { Dna, FileSearch, Tags } from 'lucide-react';
 
 export type AgentStatus = 'available' | 'coming_soon';
 
@@ -42,24 +42,6 @@ export const AGENTS: AgentMeta[] = [
     tags: ['Curation', 'Annotations', 'Extraction'],
     icon: Tags,
     accent: '#c4720c',
-    status: 'coming_soon',
-  },
-  {
-    id: 'rnaseq-de',
-    name: 'RNA-seq Differential Expression',
-    blurb: 'Compare two cohorts with DESeq2 + pathway enrichment and a written interpretation.',
-    tags: ['Transcriptomics', 'DESeq2', 'GSEA'],
-    icon: BarChart3,
-    accent: '#7b3df0',
-    status: 'coming_soon',
-  },
-  {
-    id: 'immune-deconvolution',
-    name: 'Immune Deconvolution',
-    blurb: 'Estimate immune/cell-type composition from bulk RNA-seq across NF tumor types.',
-    tags: ['Transcriptomics', 'Deconvolution'],
-    icon: Microscope,
-    accent: '#c0397e',
     status: 'coming_soon',
   },
 ];
