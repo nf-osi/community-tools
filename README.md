@@ -15,13 +15,33 @@ A public-facing roadmap app for the NF-OSI portal. The community can browse infr
 
 ## Authentication
 
-Viewing the roadmap requires no login.
+Both apps use Synapse OAuth to sign in, but they deliberately use **two different
+tokens** to write to Synapse. This distinction matters — keep it straight:
 
-**User-facing (OAuth)**: Submitting an idea uses Synapse OAuth so submissions are attributed to the logged-in user. The frontend redirects to the Synapse OAuth authorization endpoint; on callback the backend exchanges the code for a user access token, which is used for that request only (not stored).
+**Roadmap → SERVICE token.** Creating the discussion thread, creating the idea
+(folder + annotations), and recording votes are all written by the backend with
+the `SYNAPSE_AUTH_TOKEN` service account token (the NF-OSI service account). The
+service token stays server-side and is never exposed to the client. The user's
+own token is *not* used for these writes — the service account acts on their
+behalf. (See the `/api/ideas*` routes in `backend/app.js`.)
 
-**Backend writes (service token)**: All updates — vote counts, idea annotations — are written by the backend using the `SYNAPSE_AUTH_TOKEN` service account token, which stays server-side and is never exposed to the client.
+**GWAS agent → the USER's token, forwarded.** The agent acts **as the signed-in
+user**. At OAuth callback the backend persists the user's access token in the
+session; the GWAS routes (`/api/gwas/*` in `backend/gwas.js`) use it for every
+Synapse call, and `/submit` **forwards that token to the analysis job**, which
+downloads inputs and writes results under the **user's own permissions**. A file
+the user can't access can't be analyzed on their behalf. The service token is
+*not* used anywhere in the GWAS flow.
+- For this, the OAuth login requests Synapse data scopes (`view download
+  modify`) — the OAuth client must be registered to allow them.
+- **Security note:** the token is held in `cookie-session`, which is signed but
+  **not encrypted**. For production, move it to an encrypted/server-side session
+  store.
 
-**Local dev without OAuth**: If you don't have an OAuth client yet, set `DEV_AUTH_BYPASS=true` and a `SYNAPSE_AUTH_TOKEN` in `.env`. The "Log in" button then signs you in as the service token's Synapse user, skipping the OAuth round-trip. This is hard-disabled when `NODE_ENV=production`.
+**Local dev without OAuth**: set `DEV_AUTH_BYPASS=true` and a `SYNAPSE_AUTH_TOKEN`
+in `.env`. The "Log in" button signs you in as the service token's Synapse user
+and uses that token for the GWAS flow too (you're acting as the service account
+in dev). Hard-disabled when `NODE_ENV=production`.
 
 ## Setup
 

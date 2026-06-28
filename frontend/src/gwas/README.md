@@ -35,11 +35,14 @@ community-tools app. It reuses the existing Synapse OAuth session and the
 | `POST /api/gwas/check-files` | `{ selected_files, output_parent_id?, user_params? }` | `FileCheckResult` | Calls Claude with the file-check system prompt and `schemas/gwas-file-check.json` as a forced tool; AJV-validates the verdict. Needs `ANTHROPIC_API_KEY`. |
 | `POST /api/gwas/submit` | `{ context }` | `{ job_id, batchJobId? }` | Invokes the `nf-gwas-submit` Lambda. Needs `GWAS_SUBMIT_FUNCTION` + AWS creds. |
 
-**Auth model:** GWAS routes require a logged-in session (gating), but Synapse
-reads and the token forwarded to the Lambda use the server-side **service token**
-(`SYNAPSE_AUTH_TOKEN`) — this app never persists the user's OAuth token. To run
-jobs as the end user instead, persist the user access token at OAuth callback and
-forward it from `/submit` in place of the service token.
+**Auth model — acts AS THE USER.** Every GWAS route uses the **signed-in user's**
+Synapse OAuth token (persisted in the session at `/oauth/callback`), and `/submit`
+**forwards that token to the job**, so inputs are downloaded and results written
+under the user's own permissions. The service token (`SYNAPSE_AUTH_TOKEN`) is NOT
+used here — that's the roadmap flow (thread/idea/votes). This requires the OAuth
+login to request Synapse data scopes (`view download modify`) and the user token
+to be present in the session (`requireUserToken`). Security: the token rides in
+the signed-but-not-encrypted cookie session — use an encrypted store in prod.
 
 Types live in `types.ts`; `FileCheckResult` mirrors
 `hackathon/frontend/file-check.schema.json` exactly, so the agent's structured

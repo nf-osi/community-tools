@@ -1,14 +1,18 @@
 // GWAS agent backend routes.
 //
 //   GET  /api/gwas/entity/:synId   resolve Synapse file metadata (+ small preview)
+//   POST /api/gwas/check-folder     check the results destination is writable
 //   POST /api/gwas/check-files      run the pre-flight file-check agent (Claude)
 //   POST /api/gwas/submit           invoke the AWS submit Lambda to start the job
 //
-// Auth model: these routes require a logged-in session (gating), but Synapse
-// reads and the token forwarded to the Lambda use the server-side SERVICE token
-// (SYNAPSE_AUTH_TOKEN) — consistent with the rest of this app, which never
-// stores the user's OAuth token. To run jobs as the end user instead, persist
-// the user access token server-side at OAuth callback and forward that here.
+// AUTH MODEL — the GWAS agent acts AS THE SIGNED-IN USER (this differs from the
+// roadmap). Every Synapse call here uses the user's OAuth access token (persisted
+// in the session at /oauth/callback), and /submit FORWARDS that token to the job
+// so it downloads inputs and writes results under the USER'S OWN permissions —
+// a file the user can't access can't be analyzed on their behalf. The service
+// token (SYNAPSE_AUTH_TOKEN) is intentionally NOT used in this file.
+//   Contrast: the roadmap routes in app.js create the discussion thread + idea
+//   and record votes with the SERVICE token (SYNAPSE_AUTH_TOKEN).
 
 const express = require('express');
 const axios = require('axios');
@@ -30,21 +34,26 @@ const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 const PREVIEW_BYTES = 16 * 1024;
 const PREVIEW_EXTS = ['.tsv', '.csv', '.txt', '.vcf', '.ped', '.fam', '.bim', '.cov', '.pheno'];
 
-function getServiceToken() {
-  const token = process.env.SYNAPSE_AUTH_TOKEN;
-  if (!token) throw new Error('SYNAPSE_AUTH_TOKEN is not set');
-  return token;
-}
-
-function synapseHeaders() {
-  return { Authorization: `Bearer ${getServiceToken()}`, 'Content-Type': 'application/json' };
-}
-
-function requireLogin(req, res, next) {
+// Require a logged-in session that carries the user's Synapse access token —
+// every Synapse call in this file acts as that user.
+function requireUserToken(req, res, next) {
   if (!req.session || !req.session.user) {
     return res.status(401).json({ error: 'Login required' });
   }
+  if (!req.session.synapseAccessToken) {
+    return res.status(401).json({
+      error: 'Your Synapse session is missing an access token — please log out and log in again.',
+    });
+  }
   next();
+}
+
+// Per-user Synapse auth headers (NEVER the service token in this file).
+function userHeaders(req) {
+  return {
+    Authorization: `Bearer ${req.session.synapseAccessToken}`,
+    'Content-Type': 'application/json',
+  };
 }
 
 function parseAnnotations(annoData) {
@@ -63,8 +72,7 @@ function looksLikeText(name, contentType) {
 }
 
 // Fetch the first ~16KB of a Synapse file as a text preview (best-effort).
-async function fetchPreview(synId) {
-  const headers = synapseHeaders();
+async function fetchPreview(synId, headers) {
   const urlResp = await axios.get(
     `${SYNAPSE_BASE}/entity/${synId}/file?redirect=false`,
     { headers, responseType: 'text' }
@@ -80,13 +88,13 @@ async function fetchPreview(synId) {
 }
 
 // ── GET /api/gwas/entity/:synId ──────────────────────────────────────────────
-router.get('/entity/:synId', requireLogin, async (req, res) => {
+router.get('/entity/:synId', requireUserToken, async (req, res) => {
   const { synId } = req.params;
   if (!/^syn\d+$/i.test(synId)) {
     return res.status(400).json({ error: 'Invalid Synapse id' });
   }
   try {
-    const headers = synapseHeaders();
+    const headers = userHeaders(req);
     const entityResp = await axios.get(`${SYNAPSE_BASE}/entity/${synId}`, { headers });
     const entity = entityResp.data;
 
@@ -110,7 +118,7 @@ router.get('/entity/:synId', requireLogin, async (req, res) => {
 
     let preview;
     if (looksLikeText(entity.name, contentType)) {
-      try { preview = await fetchPreview(synId); }
+      try { preview = await fetchPreview(synId, headers); }
       catch (_) { /* preview is best-effort */ }
     }
 
@@ -125,10 +133,9 @@ router.get('/entity/:synId', requireLogin, async (req, res) => {
 
 // ── POST /api/gwas/check-folder ──────────────────────────────────────────────
 // Deterministic: does the results destination exist, is it a container, and can
-// we write to it? Checked with the service token — the same account that the job
-// uses to write results — so this matches what will happen at run time.
-async function checkOutputWritable(parentId) {
-  const headers = synapseHeaders();
+// the SIGNED-IN USER write to it? Checked with the user's token — the same token
+// forwarded to the job — so this matches what will happen at run time.
+async function checkOutputWritable(parentId, headers) {
   let entity;
   try {
     entity = (await axios.get(`${SYNAPSE_BASE}/entity/${parentId}`, { headers })).data;
@@ -155,14 +162,14 @@ async function checkOutputWritable(parentId) {
   return { ok: true, code: 'ok', message: `${entity.name || parentId} is writable.` };
 }
 
-router.post('/check-folder', requireLogin, async (req, res) => {
+router.post('/check-folder', requireUserToken, async (req, res) => {
   const { output_parent_id } = req.body || {};
   if (!output_parent_id || !/^syn\d+$/i.test(output_parent_id)) {
     return res.status(400).json({ ok: false, code: 'output_invalid',
       message: 'Provide a valid Synapse id (syn…) for the results folder.' });
   }
   try {
-    res.json(await checkOutputWritable(output_parent_id));
+    res.json(await checkOutputWritable(output_parent_id, userHeaders(req)));
   } catch (err) {
     console.error('POST /api/gwas/check-folder error:', err.response?.data || err.message);
     res.status(500).json({ ok: false, code: 'output_check_error', message: err.message });
@@ -213,7 +220,7 @@ STATUS (combine both dimensions):
 
 Populate resolved_context with everything you could determine (inputs / output_parent_id / params), shaped exactly per the tool schema. Leave unknown fields out. When status is "ready", resolved_context must be complete enough to submit. Keep summary to one user-facing sentence; make every issue/question message specific and actionable.`;
 
-router.post('/check-files', requireLogin, async (req, res) => {
+router.post('/check-files', requireUserToken, async (req, res) => {
   if (!ANTHROPIC_API_KEY) {
     return res.status(501).json({ error: 'File check is not configured (ANTHROPIC_API_KEY missing)' });
   }
@@ -274,7 +281,7 @@ router.post('/check-files', requireLogin, async (req, res) => {
 });
 
 // ── POST /api/gwas/submit ────────────────────────────────────────────────────
-router.post('/submit', requireLogin, async (req, res) => {
+router.post('/submit', requireUserToken, async (req, res) => {
   if (!GWAS_SUBMIT_FUNCTION) {
     return res.status(501).json({ error: 'Job submission is not configured (GWAS_SUBMIT_FUNCTION missing)' });
   }
@@ -295,7 +302,9 @@ router.post('/submit', requireLogin, async (req, res) => {
 
   try {
     const client = new LambdaClient({ region: AWS_REGION });
-    const payload = { synapse_token: getServiceToken(), context };
+    // Forward the SIGNED-IN USER's token — the job downloads inputs and writes
+    // results under the user's own Synapse permissions (not the service account).
+    const payload = { synapse_token: req.session.synapseAccessToken, context };
     const out = await client.send(new InvokeCommand({
       FunctionName: GWAS_SUBMIT_FUNCTION,
       Payload: Buffer.from(JSON.stringify(payload)),

@@ -99,6 +99,9 @@ app.get('/api/auth/login', async (req, res) => {
       const { ownerId, userName } = profileResp.data;
       const synapseId = ownerId != null ? parseInt(String(ownerId), 10) || undefined : undefined;
       req.session.user = { id: String(ownerId), synapseId, username: userName || `dev-${ownerId}` };
+      // Dev: the GWAS agent flow forwards a per-user token; locally that's the
+      // service token (we're acting as the service account in dev).
+      req.session.synapseAccessToken = getAuthToken();
       console.log('[auth/login] DEV_AUTH_BYPASS — signed in as', req.session.user);
       return res.redirect(POST_LOGIN_URL);
     } catch (err) {
@@ -122,7 +125,12 @@ app.get('/api/auth/login', async (req, res) => {
     response_type: 'code',
     client_id: OAUTH_CLIENT_ID,
     redirect_uri: redirectUri,
-    scope: 'openid profile',
+    // Data scopes (view/download/modify) so the user's token can be forwarded to
+    // the GWAS agent to download inputs and write results AS THE USER. The
+    // roadmap flow doesn't use the user token (it writes with the service token),
+    // but these scopes are harmless there. NB: the OAuth client must be
+    // registered to allow these scopes.
+    scope: 'openid view download modify',
     claims,
     state,
     nonce,
@@ -173,6 +181,13 @@ app.get('/oauth/callback', async (req, res) => {
     const synapseId = userid != null ? parseInt(String(userid), 10) || undefined : undefined;
     console.log('[oauth/callback] userinfo:', { sub, user_name, userid, synapseId });
     req.session.user = { id: sub, synapseId, username: user_name || sub };
+    // Persist the user's access token for the GWAS agent flow, which forwards it
+    // to act AS THE USER (download inputs / write results under their Synapse
+    // permissions). The roadmap flow does NOT use this — it writes with the
+    // service token. SECURITY: cookie-session is signed but not encrypted, so the
+    // token rides in the (httpOnly, prod-secure) cookie; for production, move it
+    // to an encrypted/server-side session store.
+    req.session.synapseAccessToken = access_token;
     console.log('[oauth/callback] session saved, redirecting to', POST_LOGIN_URL);
 
     res.redirect(POST_LOGIN_URL);
