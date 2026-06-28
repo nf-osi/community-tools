@@ -40,6 +40,16 @@ export default function ToolsModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Guardrails */}
+          <div className="rounded-lg px-4 py-3" style={{ background: '#e8f3f9' }}>
+            <p className="text-[13px]" style={{ color: '#16181c' }}>
+              <span className="font-medium">Cost &amp; safety limits.</span> Each run is capped
+              by a fixed per-run cost budget and a maximum number of steps. If the agent
+              reaches either limit it stops automatically — so an analysis can't run away or
+              rack up unbounded cost.
+            </p>
+          </div>
+
           {/* Pipeline tools */}
           <section>
             <h3 className="font-display font-semibold text-[13px] uppercase tracking-[0.08em] mb-1" style={{ color: '#8a8f98' }}>

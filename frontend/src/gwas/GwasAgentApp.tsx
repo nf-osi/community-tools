@@ -257,6 +257,10 @@ export default function GwasAgentApp() {
                 {submitting ? 'Submitting…' : 'Run GWAS'}
               </button>
             )}
+            <p className="text-[12px] mt-3" style={{ color: '#8a8f98' }}>
+              Each run is bounded by a per-run cost budget and a step limit — the agent
+              stops automatically if it reaches them, so runs can't run away.
+            </p>
           </section>
         )}
 
