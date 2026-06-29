@@ -3,6 +3,7 @@ import { Map, Sparkles, ArrowRight } from 'lucide-react';
 import { Link } from './router';
 import { fetchSession, logout } from './api';
 import { loginUrl } from './loginUrl';
+import { AGENTS_ENABLED } from './features';
 import type { User } from './types';
 
 function PortalLogo() {
@@ -111,10 +112,12 @@ export default function Landing() {
           Community Tools
         </h1>
         <p className="text-base max-w-xl mb-12" style={{ color: '#54585f' }}>
-          Shape what the portal builds next, and run analyses on portal data — all in one place.
+          {AGENTS_ENABLED
+            ? 'Shape what the portal builds next, and run analyses on portal data — all in one place.'
+            : 'Shape what the portal builds next.'}
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className={`grid gap-6 ${AGENTS_ENABLED ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 max-w-md'}`}>
           <OptionCard
             to="/roadmap"
             eyebrow="Plan"
@@ -123,14 +126,16 @@ export default function Landing() {
             icon={Map}
             accent="#1b7eab"
           />
-          <OptionCard
-            to="/agents"
-            eyebrow="Analyze"
-            title="Agent Gallery"
-            description="Point an agent at your Synapse files; it runs the analysis and writes results back with provenance."
-            icon={Sparkles}
-            accent="#0d6e62"
-          />
+          {AGENTS_ENABLED && (
+            <OptionCard
+              to="/agents"
+              eyebrow="Analyze"
+              title="Agent Gallery"
+              description="Point an agent at your Synapse files; it runs the analysis and writes results back with provenance."
+              icon={Sparkles}
+              accent="#0d6e62"
+            />
+          )}
         </div>
       </main>
     </div>

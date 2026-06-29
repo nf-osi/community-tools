@@ -5,18 +5,22 @@ import Landing from './Landing';
 import AgentGallery from './agents/AgentGallery';
 import GwasAgentApp from './gwas/GwasAgentApp';
 import { usePath } from './router';
+import { AGENTS_ENABLED } from './features';
 import './index.css';
 
 // Dependency-free routing:
 //   /                 -> landing (choose Roadmap or Agents)
 //   /roadmap          -> community roadmap app
-//   /agents           -> agent gallery
-//   /agents/gwas      -> GWAS agent  (/gwas kept for back-compat)
+//   /agents           -> agent gallery        (gated by AGENTS_ENABLED)
+//   /agents/gwas      -> GWAS agent            (gated; /gwas kept for back-compat)
 function Root() {
   const path = usePath();
   if (path.startsWith('/roadmap')) return <App />;
-  if (path.startsWith('/agents/gwas') || path.startsWith('/gwas')) return <GwasAgentApp />;
-  if (path.startsWith('/agents')) return <AgentGallery />;
+  // Agent routes are behind a feature flag; fall back to the landing when off.
+  if (AGENTS_ENABLED) {
+    if (path.startsWith('/agents/gwas') || path.startsWith('/gwas')) return <GwasAgentApp />;
+    if (path.startsWith('/agents')) return <AgentGallery />;
+  }
   return <Landing />;
 }
 

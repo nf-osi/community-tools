@@ -81,6 +81,17 @@ Visit http://127.0.0.1:5173
 - **Backend**: Express.js — proxies all Synapse API calls so the auth token stays server-side
 - **Validation**: AJV + `backend/schemas/idea.json` (JSON Schema draft-07)
 
+## Feature flags
+
+Frontend build-time flags (Vite, `src/features.ts`):
+
+- **`VITE_ENABLE_AGENTS`** — exposes the **Agent Gallery** (landing card + `/agents`
+  routes incl. the GWAS agent). Default **off**; the landing shows only the
+  Roadmap and `/agents*` routes fall back to the landing. It's `true` in
+  `frontend/.env.development` (on for local dev). To expose it in production, set
+  `VITE_ENABLE_AGENTS=true` in the deploy env (e.g. Vercel); leave it unset to
+  keep agents hidden until they're ready.
+
 ## Synapse resources
 
 - Ideas parent folder: `syn75281274`
