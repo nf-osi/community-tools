@@ -75,6 +75,15 @@
       "type": "string",
       "pattern": "^Q[1-4] \\d{4}$",
       "description": "Quarter in which the idea was completed, e.g. Q2 2026. Set when status transitions to Completed."
+    },
+    "threadId": {
+      "type": "string",
+      "description": "ID of the linked Synapse discussion thread. Set server-side after submission."
+    },
+    "issueUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL of the linked GitHub triage issue (ends in /issues/<number>). Set server-side after submission."
     }
   }
 }
