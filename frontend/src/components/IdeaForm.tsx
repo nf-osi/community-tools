@@ -6,6 +6,7 @@ import { FOCUS_AREAS, PRIORITIES, IDEA_TYPES } from '../types';
 interface Props {
   onSubmit: (data: IdeaFormData) => Promise<void>;
   onClose: () => void;
+  initialTitle?: string;
 }
 
 
@@ -41,8 +42,10 @@ const EMPTY: IdeaFormData = {
   suggestedFunding: '',
 };
 
-export default function IdeaForm({ onSubmit, onClose }: Props) {
-  const [form, setForm] = useState<IdeaFormData>(EMPTY);
+export default function IdeaForm({ onSubmit, onClose, initialTitle }: Props) {
+  const [form, setForm] = useState<IdeaFormData>(
+    initialTitle ? { ...EMPTY, title: initialTitle } : EMPTY
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

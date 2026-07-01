@@ -13,6 +13,28 @@ const OAUTH_CLIENT_ID = process.env.SYNAPSE_OAUTH_CLIENT_ID;
 const OAUTH_CLIENT_SECRET = process.env.SYNAPSE_OAUTH_CLIENT_SECRET;
 const REDIRECT_URI_ENV = process.env.OAUTH_REDIRECT_URI;
 const POST_LOGIN_URL = process.env.POST_LOGIN_URL || '/';
+// Local-dev only: skip the OAuth round-trip and sign in as the service-token's
+// Synapse user. Hard-gated to non-production so it can never enable in prod.
+const DEV_AUTH_BYPASS =
+  process.env.DEV_AUTH_BYPASS === 'true' && process.env.NODE_ENV !== 'production';
+
+// Post-login destination. A `return` query param (the relative path the user
+// started from) is honored when it's a safe same-site path; else POST_LOGIN_URL.
+function sanitizeReturnPath(p) {
+  if (typeof p !== 'string') return null;
+  if (!p.startsWith('/') || p.startsWith('//')) return null; // same-site paths only
+  if (p.includes('://')) return null;                         // no open redirect
+  return p.length <= 512 ? p : null;
+}
+function buildPostLogin(returnPath) {
+  if (!returnPath) return POST_LOGIN_URL;
+  // In two-server dev POST_LOGIN_URL is a full origin (the Vite host); join it
+  // with the return path. In production it's '/' (same origin) — use the path.
+  if (/^https?:\/\//i.test(POST_LOGIN_URL)) {
+    return POST_LOGIN_URL.replace(/\/+$/, '') + returnPath;
+  }
+  return returnPath;
+}
 
 function getRedirectUri(req) {
   if (REDIRECT_URI_ENV) return REDIRECT_URI_ENV;
@@ -87,11 +109,32 @@ function buildAnnotations(id, etag, data) {
 // ── Auth routes ──────────────────────────────────────────────────────────────
 
 // GET /api/auth/login — redirect to Synapse authorization endpoint
-app.get('/api/auth/login', (req, res) => {
+app.get('/api/auth/login', async (req, res) => {
+  // Where to return after login (the page the user started from).
+  const returnTo = sanitizeReturnPath(req.query.return);
+  // Dev bypass: establish a session from the service token's Synapse profile.
+  if (DEV_AUTH_BYPASS) {
+    try {
+      const profileResp = await axios.get(`${SYNAPSE_BASE}/userProfile`, { headers: synapseHeaders() });
+      const { ownerId, userName } = profileResp.data;
+      const synapseId = ownerId != null ? parseInt(String(ownerId), 10) || undefined : undefined;
+      req.session.user = { id: String(ownerId), synapseId, username: userName || `dev-${ownerId}` };
+      // Dev: the GWAS agent flow forwards a per-user token; locally that's the
+      // service token (we're acting as the service account in dev).
+      req.session.synapseAccessToken = getAuthToken();
+      console.log('[auth/login] DEV_AUTH_BYPASS — signed in as', req.session.user);
+      return res.redirect(buildPostLogin(returnTo));
+    } catch (err) {
+      console.error('[auth/login] dev bypass failed:', err.response?.data || err.message);
+      return res.redirect(`${POST_LOGIN_URL}?auth_error=dev_bypass_failed`);
+    }
+  }
+
   const state = crypto.randomBytes(16).toString('hex');
   const nonce = crypto.randomBytes(16).toString('hex');
   req.session.oauthState = state;
-  console.log('[auth/login] state:', state);
+  if (returnTo) req.session.returnTo = returnTo;  // survive the OAuth round-trip
+  console.log('[auth/login] state:', state, '| returnTo:', returnTo || '(default)');
   const claims = JSON.stringify({
     userinfo: {
       userid: null,
@@ -103,7 +146,12 @@ app.get('/api/auth/login', (req, res) => {
     response_type: 'code',
     client_id: OAUTH_CLIENT_ID,
     redirect_uri: redirectUri,
-    scope: 'openid profile',
+    // Data scopes (view/download/modify) so the user's token can be forwarded to
+    // the GWAS agent to download inputs and write results AS THE USER. The
+    // roadmap flow doesn't use the user token (it writes with the service token),
+    // but these scopes are harmless there. NB: the OAuth client must be
+    // registered to allow these scopes.
+    scope: 'openid view download modify',
     claims,
     state,
     nonce,
@@ -154,9 +202,18 @@ app.get('/oauth/callback', async (req, res) => {
     const synapseId = userid != null ? parseInt(String(userid), 10) || undefined : undefined;
     console.log('[oauth/callback] userinfo:', { sub, user_name, userid, synapseId });
     req.session.user = { id: sub, synapseId, username: user_name || sub };
-    console.log('[oauth/callback] session saved, redirecting to', POST_LOGIN_URL);
+    // Persist the user's access token for the GWAS agent flow, which forwards it
+    // to act AS THE USER (download inputs / write results under their Synapse
+    // permissions). The roadmap flow does NOT use this — it writes with the
+    // service token. SECURITY: cookie-session is signed but not encrypted, so the
+    // token rides in the (httpOnly, prod-secure) cookie; for production, move it
+    // to an encrypted/server-side session store.
+    req.session.synapseAccessToken = access_token;
+    const dest = buildPostLogin(sanitizeReturnPath(req.session.returnTo));
+    delete req.session.returnTo;
+    console.log('[oauth/callback] session saved, redirecting to', dest);
 
-    res.redirect(POST_LOGIN_URL);
+    res.redirect(dest);
   } catch (err) {
     console.error('[oauth/callback] token exchange error:', err.response?.data || err.message);
     res.redirect(`${POST_LOGIN_URL}?auth_error=token_exchange_failed`);
@@ -174,6 +231,9 @@ app.post('/api/auth/logout', (req, res) => {
   req.session = null;
   res.json({ ok: true });
 });
+
+// ── GWAS agent routes ─────────────────────────────────────────────────────────
+app.use('/api/gwas', require('./gwas'));
 
 // ── Ideas routes ──────────────────────────────────────────────────────────────
 

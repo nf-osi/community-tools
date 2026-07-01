@@ -15,11 +15,33 @@ A public-facing roadmap app for the NF-OSI portal. The community can browse infr
 
 ## Authentication
 
-Viewing the roadmap requires no login.
+Both apps use Synapse OAuth to sign in, but they deliberately use **two different
+tokens** to write to Synapse. This distinction matters — keep it straight:
 
-**User-facing (OAuth)**: Submitting an idea uses Synapse OAuth so submissions are attributed to the logged-in user. The frontend redirects to the Synapse OAuth authorization endpoint; on callback the backend exchanges the code for a user access token, which is used for that request only (not stored).
+**Roadmap → SERVICE token.** Creating the discussion thread, creating the idea
+(folder + annotations), and recording votes are all written by the backend with
+the `SYNAPSE_AUTH_TOKEN` service account token (the NF-OSI service account). The
+service token stays server-side and is never exposed to the client. The user's
+own token is *not* used for these writes — the service account acts on their
+behalf. (See the `/api/ideas*` routes in `backend/app.js`.)
 
-**Backend writes (service token)**: All updates — vote counts, idea annotations — are written by the backend using the `SYNAPSE_AUTH_TOKEN` service account token, which stays server-side and is never exposed to the client.
+**GWAS agent → the USER's token, forwarded.** The agent acts **as the signed-in
+user**. At OAuth callback the backend persists the user's access token in the
+session; the GWAS routes (`/api/gwas/*` in `backend/gwas.js`) use it for every
+Synapse call, and `/submit` **forwards that token to the analysis job**, which
+downloads inputs and writes results under the **user's own permissions**. A file
+the user can't access can't be analyzed on their behalf. The service token is
+*not* used anywhere in the GWAS flow.
+- For this, the OAuth login requests Synapse data scopes (`view download
+  modify`) — the OAuth client must be registered to allow them.
+- **Security note:** the token is held in `cookie-session`, which is signed but
+  **not encrypted**. For production, move it to an encrypted/server-side session
+  store.
+
+**Local dev without OAuth**: set `DEV_AUTH_BYPASS=true` and a `SYNAPSE_AUTH_TOKEN`
+in `.env`. The "Log in" button signs you in as the service token's Synapse user
+and uses that token for the GWAS flow too (you're acting as the service account
+in dev). Hard-disabled when `NODE_ENV=production`.
 
 ## Setup
 
@@ -42,19 +64,33 @@ cp .env.example .env
 ```bash
 npm start
 ```
-Visit http://localhost:3001
+Visit http://127.0.0.1:9000
 
 **Two-server dev mode** (faster iteration with Vite HMR):
 ```bash
 npm run dev
 ```
-Visit http://localhost:5173
+Visit http://127.0.0.1:5173
+
+> Use `127.0.0.1`, not `localhost`, so the session-cookie domain matches the
+> OAuth redirect URI (see `.env.example`); otherwise login silently fails.
 
 ## Architecture
 
 - **Frontend**: Vite + React + TypeScript + Tailwind CSS + lucide-react
 - **Backend**: Express.js — proxies all Synapse API calls so the auth token stays server-side
 - **Validation**: AJV + `backend/schemas/idea.json` (JSON Schema draft-07)
+
+## Feature flags
+
+Frontend build-time flags (Vite, `src/features.ts`):
+
+- **`VITE_ENABLE_AGENTS`** — exposes the **Agent Gallery** (landing card + `/agents`
+  routes incl. the GWAS agent). Default **off**; the landing shows only the
+  Roadmap and `/agents*` routes fall back to the landing. It's `true` in
+  `frontend/.env.development` (on for local dev). To expose it in production, set
+  `VITE_ENABLE_AGENTS=true` in the deploy env (e.g. Vercel); leave it unset to
+  keep agents hidden until they're ready.
 
 ## Synapse resources
 

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw, Loader2, Lightbulb } from 'lucide-react';
+import { RefreshCw, Loader2, Lightbulb, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Link } from './router';
+import { loginUrl } from './loginUrl';
 import { fetchIdeas, createIdea, voteForIdea, fetchSession, logout } from './api';
 import type { Idea, IdeaFormData, Status, FocusArea, User } from './types';
 import FacetFilters from './components/FacetFilters';
@@ -29,7 +31,13 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [formInitialTitle, setFormInitialTitle] = useState('');
   const [submittedIdea, setSubmittedIdea] = useState<Idea | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  // Set when arriving from the gallery's "Submit a new agent" card (/roadmap?new=agent).
+  const [pendingNewAgent, setPendingNewAgent] = useState(
+    () => new URLSearchParams(window.location.search).get('new') === 'agent'
+  );
   const [view, setView] = useState<'grid' | 'timeline'>('grid');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -71,8 +79,27 @@ export default function App() {
 
   useEffect(() => {
     loadIdeas();
-    fetchSession().then(({ user }) => setUser(user)).catch(() => {});
+    fetchSession()
+      .then(({ user }) => setUser(user))
+      .catch(() => {})
+      .finally(() => setSessionChecked(true));
   }, []);
+
+  // "Submit a new agent" intent from the gallery: open the form prefilled once
+  // we know the auth state (or prompt login if signed out). Clean the URL.
+  useEffect(() => {
+    if (pendingNewAgent) window.history.replaceState({}, '', '/roadmap');
+  }, [pendingNewAgent]);
+  useEffect(() => {
+    if (!pendingNewAgent || !sessionChecked) return;
+    if (user) {
+      setFormInitialTitle('New agent: ');
+      setShowForm(true);
+    } else {
+      setShowLoginModal(true);
+    }
+    setPendingNewAgent(false);
+  }, [pendingNewAgent, sessionChecked, user]);
 
   // Handle auth errors from OAuth callback redirect
   useEffect(() => {
@@ -161,7 +188,25 @@ export default function App() {
     <div className="min-h-screen">
       {/* Masthead */}
       <div ref={headerRef} className="sticky top-0 z-40 bg-white border-b border-[#e2e2dc]">
-      <header className="max-w-7xl mx-auto px-10 pt-8 flex items-end gap-5">
+      <div className="max-w-7xl mx-auto px-10 pt-3 flex items-center justify-between text-sm">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 hover:underline"
+          style={{ color: '#8a8f98' }}
+        >
+          <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" /> Home
+        </Link>
+        <a
+          href="https://nf.synapse.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 hover:underline"
+          style={{ color: '#8a8f98' }}
+        >
+          NF Data Portal <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+        </a>
+      </div>
+      <header className="max-w-7xl mx-auto px-10 pt-5 flex items-end gap-5">
         <div className="flex items-start gap-5 flex-shrink-0 pb-px">
           <svg viewBox="0 0 40 40" className="w-10 h-10 flex-shrink-0 mt-1" aria-hidden="true">
             <circle cx="15" cy="17" r="9.5" fill="#0d6e62" opacity=".82"/>
@@ -227,7 +272,7 @@ export default function App() {
                 {user!.username}
               </span>
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => { setFormInitialTitle(''); setShowForm(true); }}
                 className="font-display font-medium text-sm px-[22px] py-[11px] rounded-full transition-colors"
                 style={{ background: '#16181c', color: '#f6f6f3' }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}
@@ -245,7 +290,7 @@ export default function App() {
             </>
           ) : (
             <a
-              href={`${import.meta.env.VITE_AUTH_BASE ?? ''}/api/auth/login`}
+              href={loginUrl()}
               className="font-display font-medium text-sm px-[22px] py-[11px] rounded-full transition-colors"
               style={{ background: '#16181c', color: '#f6f6f3' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#1b7eab')}
@@ -402,6 +447,7 @@ export default function App() {
       )}
       {showForm && (
         <IdeaForm
+          initialTitle={formInitialTitle}
           onSubmit={handleCreateIdea}
           onClose={() => setShowForm(false)}
         />

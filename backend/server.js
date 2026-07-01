@@ -15,7 +15,7 @@ app.get('*', (_req, res) => {
 
 const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => {
-  console.log(`Roadmap app running at http://localhost:${PORT}`);
+  console.log(`Roadmap app running at http://127.0.0.1:${PORT}`);
   if (!process.env.SYNAPSE_AUTH_TOKEN) {
     console.warn('WARNING: SYNAPSE_AUTH_TOKEN is not set. API calls will fail.');
   }
