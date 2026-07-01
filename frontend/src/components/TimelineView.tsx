@@ -22,8 +22,8 @@ function effectiveQuarter(idea: Idea): string | null {
 }
 
 export default function TimelineView({ ideas, votedIds, isLoggedIn, onVote, onSelect, onRequestLogin }: Props) {
+  // Only scheduled ideas reach the timeline; unscheduled ones live on the ideas tab.
   const dated = ideas.filter((i) => effectiveQuarter(i) !== null);
-  const undated = ideas.filter((i) => effectiveQuarter(i) === null);
 
   const groups = new Map<string, Idea[]>();
   for (const idea of dated) {
@@ -43,33 +43,23 @@ export default function TimelineView({ ideas, votedIds, isLoggedIn, onVote, onSe
     return quarterToSortKey(q) < currentQuarterKey;
   }
 
-  const allGroups: Array<{ key: string; label: string; past: boolean; ideas: Idea[] }> = [
-    ...sortedQuarters.map((q) => ({
+  const allGroups: Array<{ key: string; label: string; past: boolean; ideas: Idea[] }> =
+    sortedQuarters.map((q) => ({
       key: q,
       label: q,
       past: isPast(q),
       ideas: groups.get(q)!,
-    })),
-    ...(undated.length > 0
-      ? [{ key: '__undated__', label: 'Unscheduled', past: false, ideas: undated }]
-      : []),
-  ];
+    }));
 
   return (
     <div className="max-w-2xl">
       {allGroups.map((group, idx) => {
         const isLast = idx === allGroups.length - 1;
-        const isUnscheduled = group.key === '__undated__';
         return (
           <div key={group.key} className="flex gap-6">
             {/* Spine */}
             <div className="flex flex-col items-center w-6 flex-shrink-0 pt-[3px]">
-              {isUnscheduled ? (
-                <div
-                  className="w-3 h-3 rounded-full border-2 border-dashed flex-shrink-0"
-                  style={{ borderColor: '#cfd0c9', background: 'transparent' }}
-                />
-              ) : group.past ? (
+              {group.past ? (
                 <div
                   className="w-3 h-3 rounded-full flex-shrink-0"
                   style={{ background: '#16181c' }}
@@ -90,11 +80,11 @@ export default function TimelineView({ ideas, votedIds, isLoggedIn, onVote, onSe
               <div className="flex items-center gap-3 mb-4">
                 <span
                   className="font-display font-medium text-[15px] uppercase tracking-[0.1em]"
-                  style={{ color: group.past || isUnscheduled ? '#8a8f98' : '#16181c' }}
+                  style={{ color: group.past ? '#8a8f98' : '#16181c' }}
                 >
                   {group.label}
                 </span>
-                {group.past && !isUnscheduled && (
+                {group.past && (
                   <span className="font-display text-[11px] uppercase tracking-[0.14em]" style={{ color: '#8a8f98' }}>
                     completed
                   </span>

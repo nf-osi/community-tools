@@ -121,7 +121,11 @@ export default function App() {
   }
 
   const filteredIdeas = useMemo(() => {
-    let result = ideas;
+    // Each idea lives in exactly one place: scheduled ideas (with a target or
+    // completed quarter) appear on the Timeline; unscheduled ideas still needing
+    // review appear on the Roadmap ideas tab.
+    const isScheduled = (i: Idea) => Boolean(i.targetDate || i.completedDate);
+    let result = ideas.filter((i) => (view === 'timeline' ? isScheduled(i) : !isScheduled(i)));
     if (statusFilter !== 'All') result = result.filter((i) => i.status === statusFilter);
     if (focusFilter !== 'All') result = result.filter((i) => i.focusArea === focusFilter);
     if (communityOnly) result = result.filter((i) => i.communitySubmitted);
@@ -142,7 +146,7 @@ export default function App() {
       const numB = parseInt(b.id.replace('syn', ''), 10);
       return numB - numA;
     });
-  }, [ideas, statusFilter, focusFilter, communityOnly, sortBy]);
+  }, [ideas, view, statusFilter, focusFilter, communityOnly, sortBy, dateFrom, dateTo]);
 
   // Paginate the grid only when showing all statuses (filtered views are already narrow)
   const shouldPaginate = statusFilter === 'All' && view === 'grid';

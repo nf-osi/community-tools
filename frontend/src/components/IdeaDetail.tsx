@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, ChevronUp, Star, ExternalLink, Tag, User, DollarSign, Wrench, Dna, CalendarClock, CalendarCheck } from 'lucide-react';
+import { X, ChevronUp, Star, ExternalLink, Tag, User, DollarSign, Wrench, Dna, CalendarClock, CalendarCheck, Github } from 'lucide-react';
 import type { Idea } from '../types';
 import { STATUS_COLORS, FOCUS_AREA_COLORS, IDEA_TYPE_BADGE } from '../types';
 
@@ -129,6 +129,21 @@ export default function IdeaDetail({ idea, voted, isLoggedIn, onVote, onClose, o
               >
                 <ExternalLink aria-hidden="true" className="w-4 h-4" />
                 Discuss on Synapse
+              </a>
+            )}
+
+            {idea.issueUrl && (
+              <a
+                href={idea.issueUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 rounded font-semibold text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm"
+              >
+                <Github aria-hidden="true" className="w-4 h-4" />
+                {(() => {
+                  const n = idea.issueUrl!.match(/\/issues\/(\d+)/)?.[1];
+                  return n ? `Issue #${n}` : 'Track on GitHub';
+                })()}
               </a>
             )}
           </div>

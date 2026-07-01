@@ -62,6 +62,73 @@ const SYNAPSE_AUTH_BASE = 'https://repo-prod.prod.sagebase.org/auth/v1';
 const IDEAS_PARENT = 'syn75281274';
 const DISCUSSION_PROJECT = 'syn75279249';
 
+// GitHub issue tracking: on submission, mirror each idea into a GitHub issue so
+// the NF-OSI team can triage and schedule it. Optional — if GITHUB_TOKEN is
+// unset the submission still succeeds, just without a linked issue.
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_ISSUE_REPO = process.env.GITHUB_ISSUE_REPO || 'nf-osi/community-tools';
+// Comma-separated GitHub usernames to assign (default: the roadmap scheduler).
+const GITHUB_ISSUE_ASSIGNEES = (process.env.GITHUB_ISSUE_ASSIGNEES || 'BelindaBGarana')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+// Create a GitHub issue mirroring a submitted idea. Returns { number, url } or
+// null on any failure (submission must not fail just because GitHub is down).
+async function createGithubIssue({ idea, folderId, threadId }) {
+  if (!GITHUB_TOKEN) {
+    console.warn('GITHUB_TOKEN not set — skipping GitHub issue creation');
+    return null;
+  }
+  try {
+    const synapseUrl = `https://www.synapse.org/Synapse:${folderId}`;
+    const threadUrl = threadId
+      ? `https://www.synapse.org/Synapse:${DISCUSSION_PROJECT}/discussion/threadId=${threadId}`
+      : null;
+    const bodyLines = [
+      idea.summary,
+      '',
+      '---',
+      `**Type:** ${idea.ideaType || '—'}`,
+      `**Focus area:** ${idea.focusArea || '—'}`,
+      `**Priority:** ${idea.priority}`,
+      `**Affected users:** ${idea.affectedUserType || '—'}`,
+      `**Grant / initiative:** ${idea.grantTag || '—'}`,
+      `**Suggested funding:** ${idea.suggestedFunding || '—'}`,
+      `**Submitted by:** \`${idea.submitter}\``,
+      '',
+      `Synapse folder: ${synapseUrl}`,
+      ...(threadUrl ? [`Discussion thread: ${threadUrl}`] : []),
+      '',
+      '_Auto-created from the NF-OSI Community Roadmap App._',
+    ];
+    const labels = ['roadmap-idea'];
+    if (idea.ideaType) labels.push(idea.ideaType === 'New Data' ? 'new-data' : 'infrastructure');
+
+    const resp = await axios.post(
+      `https://api.github.com/repos/${GITHUB_ISSUE_REPO}/issues`,
+      {
+        title: idea.title,
+        body: bodyLines.join('\n'),
+        labels,
+        ...(GITHUB_ISSUE_ASSIGNEES.length > 0 && { assignees: GITHUB_ISSUE_ASSIGNEES }),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'User-Agent': 'nf-osi-roadmap-app',
+        },
+      }
+    );
+    return { url: resp.data.html_url };
+  } catch (err) {
+    console.warn('Failed to create GitHub issue:', err.response?.data || err.message);
+    return null;
+  }
+}
+
 function getAuthToken() {
   const token = process.env.SYNAPSE_AUTH_TOKEN;
   if (!token) throw new Error('SYNAPSE_AUTH_TOKEN is not set');
@@ -387,12 +454,21 @@ app.post('/api/ideas', async (req, res) => {
       console.warn('Failed to create discussion thread:', threadErr.response?.data || threadErr.message);
     }
 
-    // Update annotations to include threadId
+    // Mirror the idea into a GitHub issue for team triage/scheduling (best-effort)
+    const issue = await createGithubIssue({ idea: annotationData, folderId, threadId });
+
+    // Update annotations to include the threadId + GitHub issue link (if either
+    // was created). Mirrors how the discussion thread is linked back to the idea.
     let finalEtag = annoResp1.data.etag;
-    if (threadId) {
+    const linkAnnotations = {
+      ...annotationData,
+      ...(threadId && { threadId }),
+      ...(issue && { issueUrl: issue.url }),
+    };
+    if (threadId || issue) {
       const annoResp2 = await axios.put(
         `${SYNAPSE_BASE}/entity/${folderId}/annotations2`,
-        buildAnnotations(folderId, finalEtag, { ...annotationData, threadId }),
+        buildAnnotations(folderId, finalEtag, linkAnnotations),
         { headers }
       );
       finalEtag = annoResp2.data.etag;
@@ -404,6 +480,7 @@ app.post('/api/ideas', async (req, res) => {
       votes: 0,
       communitySubmitted: true,
       ...(threadId && { threadId }),
+      ...(issue && { issueUrl: issue.url }),
     });
   } catch (err) {
     console.error('POST /api/ideas error:', err.response?.data || err.message);

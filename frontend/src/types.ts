@@ -49,6 +49,7 @@ export interface Idea {
   targetDate?: string;
   completedDate?: string;
   threadId?: string;
+  issueUrl?: string;
 }
 
 export interface IdeaFormData {
@@ -98,6 +99,20 @@ export const FOCUS_AREAS: FocusArea[] = [
 ];
 
 export const PRIORITIES: Priority[] = ['Low', 'Medium', 'High'];
+
+// Associated grant / initiative options for the submission form dropdown.
+// "Not sure" is an explicit choice (per beta feedback); "Other" covers anything
+// outside the shortlist. Stored verbatim in the grantTag annotation.
+export const GRANT_OPTIONS: string[] = [
+  'Gilbert Family Foundation (GFF)',
+  "Children's Tumor Foundation (CTF)",
+  'NTAP',
+  'CDMRP NFRP',
+  'DHART SPORE',
+  'NIH / NCI',
+  'Other',
+  'Not sure',
+];
 
 export const STATUS_META: Record<Status, { color: string; bg: string }> = {
   'Proposed':             { color: '#54585f', bg: '#ececea' },

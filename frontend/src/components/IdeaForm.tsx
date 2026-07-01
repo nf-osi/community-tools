@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Loader2, Wrench, Dna } from 'lucide-react';
 import type { IdeaFormData, IdeaType, Priority, FocusArea } from '../types';
-import { FOCUS_AREAS, PRIORITIES, IDEA_TYPES } from '../types';
+import { FOCUS_AREAS, PRIORITIES, IDEA_TYPES, GRANT_OPTIONS } from '../types';
 
 interface Props {
   onSubmit: (data: IdeaFormData) => Promise<void>;
@@ -211,13 +211,16 @@ export default function IdeaForm({ onSubmit, onClose, initialTitle }: Props) {
           </Field>
 
           <Field label="Associated Grant / Initiative" hint="Optional">
-            <input
-              type="text"
+            <select
               value={form.grantTag ?? ''}
-              onChange={(e) => set('grantTag', e.target.value)}
-              placeholder="e.g. NF1 Consortium, CTF Research Award"
+              onChange={(e) => set('grantTag', e.target.value || undefined)}
               className={inputClass}
-            />
+            >
+              <option value="">— Select —</option>
+              {GRANT_OPTIONS.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Suggested Funding Source" hint="Optional — any ideas for how this could be funded?">
