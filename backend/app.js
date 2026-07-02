@@ -4,9 +4,11 @@ const cors = require('cors');
 const crypto = require('crypto');
 const path = require('path');
 const Ajv = require('ajv');
+const addFormats = require('ajv-formats');
 const cookieSession = require('cookie-session');
 
 const ajv = new Ajv({ allErrors: true });
+addFormats(ajv); // registers standard formats (uri, email, …) used in schemas
 const validateIdea = ajv.compile(require('./schemas/idea.json'));
 
 const OAUTH_CLIENT_ID = process.env.SYNAPSE_OAUTH_CLIENT_ID;
@@ -538,6 +540,23 @@ app.post('/api/ideas/:id/vote', async (req, res) => {
       error: err.response?.data?.reason || err.message,
     });
   }
+});
+
+// ── JSON-safe fallbacks ───────────────────────────────────────────────────────
+// Any unmatched route or uncaught error must still return JSON so the frontend's
+// `res.json()` parsing never chokes on an HTML/plain-text error page.
+app.use((req, res) => {
+  res.status(404).json({ error: `Not found: ${req.method} ${req.path}` });
+});
+
+// eslint-disable-next-line no-unused-vars — Express needs the 4-arg signature.
+app.use((err, req, res, next) => {
+  console.error('[unhandled error]', err.stack || err.message || err);
+  if (res.headersSent) return next(err);
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    error: status >= 500 ? 'Internal server error' : err.message,
+  });
 });
 
 module.exports = app;

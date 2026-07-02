@@ -121,11 +121,10 @@ export default function App() {
   }
 
   const filteredIdeas = useMemo(() => {
-    // Each idea lives in exactly one place: scheduled ideas (with a target or
-    // completed quarter) appear on the Timeline; unscheduled ideas still needing
-    // review appear on the Roadmap ideas tab.
+    // The Roadmap ideas tab shows every idea; the Timeline is restricted to
+    // scheduled ideas (those with a target or completed quarter).
     const isScheduled = (i: Idea) => Boolean(i.targetDate || i.completedDate);
-    let result = ideas.filter((i) => (view === 'timeline' ? isScheduled(i) : !isScheduled(i)));
+    let result = view === 'timeline' ? ideas.filter(isScheduled) : [...ideas];
     if (statusFilter !== 'All') result = result.filter((i) => i.status === statusFilter);
     if (focusFilter !== 'All') result = result.filter((i) => i.focusArea === focusFilter);
     if (communityOnly) result = result.filter((i) => i.communitySubmitted);
