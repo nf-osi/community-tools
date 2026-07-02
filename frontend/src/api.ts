@@ -6,7 +6,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     credentials: 'include',
     ...options,
   });
-  const body = await res.json();
+  const body = await res.json().catch(() => ({} as any));
   if (!res.ok) {
     const detail = Array.isArray(body.details) ? ` (${body.details.join('; ')})` : '';
     const fallback =
